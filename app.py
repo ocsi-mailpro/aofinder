@@ -166,6 +166,8 @@ def get_ao():
         min_budget = int(request.args.get('min', 0))
         max_budget = int(request.args.get('max', 999999999))
         
+        print(f"🔍 Requête reçue: search={search}, dept={dept}, min={min_budget}, max={max_budget}")
+        
         # Construire la requête BOAMP
         where = '(objet LIKE "%informatique%" OR objet LIKE "%IT%" OR objet LIKE "%cloud%" OR objet LIKE "%cyber%" OR objet LIKE "%logiciel%" OR objet LIKE "%serveur%" OR objet LIKE "%réseau%")'
         
@@ -187,12 +189,15 @@ def get_ao():
         response = requests.get(BOAMP_API, params=params, timeout=30)
         
         if response.status_code != 200:
+            error_msg = f'Erreur API BOAMP: HTTP {response.status_code}'
+            print(f"❌ {error_msg}")
             return jsonify({
                 'error': True,
-                'message': f'Erreur API BOAMP: HTTP {response.status_code}'
+                'message': error_msg
             }), 500
         
         data = response.json()
+        print(f"✅ Réponse BOAMP: {len(data.get('results', []))} résultats")
         
         # Transformer les données
         results = []
@@ -232,7 +237,7 @@ def get_ao():
                 print(f"  ⚠️ Item ignoré: {e}")
                 continue
         
-        print(f"✅ {len(results)} AO trouvés")
+        print(f"✅ {len(results)} AO après filtres")
         
         return jsonify({
             'total': len(results),
@@ -240,16 +245,19 @@ def get_ao():
         })
         
     except requests.exceptions.Timeout:
+        print("❌ Timeout API BOAMP")
         return jsonify({
             'error': True,
             'message': "L'API BOAMP met trop de temps à répondre"
         }), 504
         
     except Exception as e:
-        print(f"❌ Erreur: {e}")
+        print(f"❌ Erreur serveur: {e}")
+        import traceback
+        traceback.print_exc()
         return jsonify({
             'error': True,
-            'message': str(e)
+            'message': f"Erreur serveur: {str(e)}"
         }), 500
 
 def extract_budget(fields):
