@@ -157,11 +157,10 @@ async function loadAO() {
       const region = REGIONS[dept] || '';
       const deptName = DEPT_NAMES[dept] || '';
       
-      // Construction : Région · NOM DÉPARTEMENT · Commune
       const locParts = [];
       if (region) locParts.push(region);
-      if (deptName) locParts.push(deptName);  // NOM pas CODE !
-      else if (dept) locParts.push(dept);     // Si pas de nom, affiche le code
+      if (deptName) locParts.push(deptName);
+      else if (dept) locParts.push(dept);
       if (commune) locParts.push(commune);
       const location = locParts.length > 0 ? locParts.join(' · ') : 'Non spécifié';
       
@@ -179,29 +178,120 @@ async function loadAO() {
       };
     });
     
-    // FILTRE STRICT IT - Vire tout ce qui est pas vraiment IT
-    const motsClesIT = ['informatique', 'logiciel', 'software', 'cloud', 'serveur', 'réseau', 'cyber', 'numérique', 'système d\'information', 'application', 'plateforme', 'données', 'base de données', 'développement', 'infrastructure IT', 'hébergement', 'saas', 'erp', 'crm', 'sécurité informatique', 'matériel informatique', 'ordinateur', 'poste de travail', 'téléphonie IP', 'virtualisation'];
-    const motsAExclure = ['ascenseur', 'mobilité verticale', 'alimentaire', 'restauration', 'nettoyage', 'gardiennage', 'bâtiment', 'travaux', 'construction'];
+    // ===== ALGORITHME DE CLASSIFICATION IT =====
+    // Score > 0 = IT, Score <= 0 = PAS IT
     
     allAO = allAO.filter(ao => {
       const titre = ao.title.toLowerCase();
       const desc = ao.description.toLowerCase();
+      const texte = titre + ' ' + desc;
       
-      // Exclure si contient des mots à exclure
-      for (let mot of motsAExclure) {
-        if (titre.includes(mot) || desc.includes(mot)) {
-          return false;
+      let score = 0;
+      
+      // === MOTS CLÉS IT FORTS (+10 points) ===
+      const motsForts = [
+        'logiciel', 'software', 'application', 'système d\'information', 'systeme d\'information',
+        'infrastructure informatique', 'parc informatique', 'matériel informatique',
+        'serveur', 'cloud', 'saas', 'paas', 'iaas', 'azure', 'aws', 'google cloud',
+        'développement', 'programmation', 'code source', 'api',
+        'base de données', 'bdd', 'sql', 'oracle', 'mysql', 'postgresql',
+        'cybersécurité', 'cyber-sécurité', 'sécurité informatique', 'pare-feu', 'firewall', 'antivirus',
+        'erp', 'crm', 'sirh', 'ged', 'gmao',
+        'hébergement web', 'datacenter', 'data center',
+        'virtualisation', 'vmware', 'hyper-v',
+        'réseau informatique', 'switch', 'routeur', 'wifi', 'lan', 'wan',
+        'téléphonie ip', 'voip', 'visioconférence',
+        'poste de travail', 'ordinateur', 'pc', 'laptop', 'tablette informatique',
+        'licence microsoft', 'licence oracle', 'abonnement logiciel',
+        'site web', 'site internet', 'portail web', 'plateforme web', 'application mobile',
+        'big data', 'analytics', 'business intelligence', 'data science',
+        'intelligence artificielle', 'machine learning', 'ia',
+        'maintenance informatique', 'support informatique', 'infogérance',
+        'migration système', 'mise à jour informatique', 'upgrade système'
+      ];
+      
+      for (let mot of motsForts) {
+        if (texte.includes(mot)) {
+          score += 10;
         }
       }
       
-      // Inclure seulement si contient au moins 1 mot clé IT
-      for (let mot of motsClesIT) {
-        if (titre.includes(mot)) {
-          return true;
+      // === MOTS CLÉS IT MOYENS (+5 points) ===
+      const motsMoyens = [
+        'informatique', 'numérique', 'digital', 'technologie',
+        'data', 'données', 'fichier', 'stockage',
+        'réseau', 'connexion', 'internet', 'intranet',
+        'sécurité', 'sauvegarde', 'backup',
+        'gestion électronique', 'dématérialisation', 'numérisation'
+      ];
+      
+      for (let mot of motsMoyens) {
+        if (texte.includes(mot)) {
+          score += 5;
         }
       }
       
-      return false;
+      // === MOTS CLÉS IT FAIBLES (+2 points) ===
+      const motsFaibles = [
+        'système', 'plateforme', 'solution', 'outil',
+        'équipement', 'matériel', 'fourniture'
+      ];
+      
+      for (let mot of motsFaibles) {
+        if (titre.includes(mot)) {  // Seulement dans le titre
+          score += 2;
+        }
+      }
+      
+      // === MOTS D'EXCLUSION ABSOLUE (-100 points) ===
+      const exclusionsAbsolues = [
+        'ascenseur', 'monte-charge', 'mobilité verticale',
+        'nettoyage', 'entretien des locaux', 'propreté',
+        'restauration collective', 'repas', 'cantine', 'cuisine',
+        'alimentaire', 'denrées', 'microbiologie',
+        'gardiennage', 'sécurité incendie', 'agent de sécurité',
+        'espaces verts', 'paysagiste', 'jardinage',
+        'déchets', 'collecte ordures', 'tri sélectif',
+        'bâtiment', 'construction', 'travaux', 'rénovation', 'maçonnerie',
+        'plomberie', 'chauffage', 'ventilation', 'climatisation',
+        'électricité bâtiment', 'installation électrique',
+        'menuiserie', 'serrurerie', 'vitrerie',
+        'peinture', 'revêtement sol', 'carrelage',
+        'transport', 'véhicule', 'car', 'bus',
+        'assainissement', 'eau potable', 'eaux usées', 'bac à graisse',
+        'voirie', 'chaussée', 'enrobé', 'bitume'
+      ];
+      
+      for (let mot of exclusionsAbsolues) {
+        if (texte.includes(mot)) {
+          score -= 100;
+        }
+      }
+      
+      // === PATTERNS D'EXCLUSION (-50 points) ===
+      const patternsExclusion = [
+        /fourniture.*produit/i,
+        /entretien.*espaces/i,
+        /maintenance.*bâtiment/i,
+        /travaux.*construction/i,
+        /prestation.*nettoyage/i,
+        /marché.*alimentaire/i
+      ];
+      
+      for (let pattern of patternsExclusion) {
+        if (pattern.test(texte)) {
+          score -= 50;
+        }
+      }
+      
+      // === VALIDATION FINALE ===
+      // Si le titre contient "informatique" ou "logiciel" direct = OK
+      if (titre.includes('informatique') || titre.includes('logiciel') || titre.includes('système d\'information')) {
+        score += 20;
+      }
+      
+      // Si score >= 10 = AO informatique
+      return score >= 10;
     });
     
     displayed = 0;
