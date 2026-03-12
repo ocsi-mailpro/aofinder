@@ -3,176 +3,277 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>AOFinder</title>
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+<title>AOFinder — Appels d'Offres IT</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
 <style>
 * { margin: 0; padding: 0; box-sizing: border-box; }
-:root { --bg: #000; --surface: rgba(255,255,255,0.03); --border: rgba(255,255,255,0.06); --text: #f5f5f7; --text2: #a1a1a6; --text3: #6e6e73; --accent: #0071e3; --success: #30d158; }
-body { font-family: -apple-system, 'Inter', sans-serif; background: var(--bg); color: var(--text); line-height: 1.5; }
-.container { max-width: 1400px; margin: 0 auto; padding: 0 40px; }
-.hero { text-align: center; padding: 100px 40px 60px; }
-.hero h1 { font-size: 64px; font-weight: 700; margin-bottom: 16px; background: linear-gradient(135deg, #f5f5f7, #a1a1a6); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
-.hero p { font-size: 22px; color: var(--text2); }
-.filters { background: var(--surface); border: 1px solid var(--border); border-radius: 20px; padding: 32px; margin-bottom: 40px; }
-.filter-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 20px; margin-bottom: 20px; }
+:root { --bg: #000; --surface: rgba(255,255,255,0.03); --surface-hover: rgba(255,255,255,0.06); --border: rgba(255,255,255,0.06); --text: #f5f5f7; --text2: #a1a1a6; --text3: #6e6e73; --accent: #0071e3; --success: #30d158; }
+body { font-family: -apple-system, BlinkMacSystemFont, 'Inter', sans-serif; background: var(--bg); color: var(--text); line-height: 1.5; -webkit-font-smoothing: antialiased; overflow-x: hidden; }
+.bg-gradient { position: fixed; top: -50%; left: -50%; right: -50%; bottom: -50%; width: 200%; height: 200vh; background: radial-gradient(circle at 50% 50%, rgba(0,113,227,0.08) 0%, transparent 50%), radial-gradient(circle at 80% 20%, rgba(48,209,88,0.06) 0%, transparent 40%); animation: gradientShift 20s ease infinite; z-index: 0; pointer-events: none; }
+@keyframes gradientShift { 0%, 100% { transform: translate(0, 0); } 50% { transform: translate(-10%, -10%); } }
+.container { max-width: 1400px; margin: 0 auto; padding: 0 40px; position: relative; z-index: 1; }
+.hero { text-align: center; padding: 120px 40px 80px; }
+.hero h1 { font-size: 72px; font-weight: 700; letter-spacing: -0.02em; margin-bottom: 16px; background: linear-gradient(135deg, #f5f5f7 0%, #a1a1a6 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; animation: fadeIn 0.8s ease; }
+.hero p { font-size: 24px; color: var(--text2); font-weight: 400; margin-bottom: 12px; animation: fadeIn 0.8s ease 0.1s both; }
+.sources-badge { display: inline-flex; align-items: center; gap: 12px; padding: 8px 20px; background: var(--surface); border: 1px solid var(--border); border-radius: 100px; font-size: 14px; color: var(--text3); backdrop-filter: blur(40px); animation: fadeIn 0.8s ease 0.2s both; }
+.live { width: 8px; height: 8px; background: var(--success); border-radius: 50%; box-shadow: 0 0 12px var(--success); animation: pulse 2s ease infinite; }
+@keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.6; } }
+.filters { background: var(--surface); backdrop-filter: blur(40px); border: 1px solid var(--border); border-radius: 24px; padding: 32px; margin-bottom: 40px; animation: fadeIn 0.8s ease 0.3s both; }
+.filter-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 20px; margin-bottom: 24px; }
 .filter-group label { display: block; font-size: 13px; font-weight: 600; color: var(--text2); margin-bottom: 8px; }
-input, select { width: 100%; background: rgba(0,0,0,0.4); border: 1px solid var(--border); border-radius: 12px; color: var(--text); padding: 14px 16px; font-family: inherit; font-size: 15px; }
-input:focus, select:focus { outline: none; border-color: var(--accent); }
+input, select { width: 100%; background: rgba(0,0,0,0.4); border: 1px solid var(--border); border-radius: 12px; color: var(--text); padding: 14px 16px; font-family: inherit; font-size: 15px; transition: all 0.2s; }
+input:focus, select:focus { outline: none; background: rgba(0,0,0,0.6); border-color: var(--accent); box-shadow: 0 0 0 4px rgba(0,113,227,0.1); }
 input::placeholder { color: var(--text3); }
-select option { background: #1a1a1a; color: var(--text); }
-.btn { padding: 14px 28px; border-radius: 12px; font-size: 15px; font-weight: 600; border: 1px solid var(--border); background: var(--surface); color: var(--text); cursor: pointer; }
-.btn:hover { background: rgba(255,255,255,0.06); }
-.stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 24px; margin-bottom: 40px; }
-.stat-card { background: var(--surface); border: 1px solid var(--border); border-radius: 20px; padding: 32px; }
-.stat-value { font-size: 48px; font-weight: 700; color: var(--accent); margin-bottom: 8px; }
-.stat-label { font-size: 14px; color: var(--text2); }
+select { background: rgba(0,0,0,0.4); color: var(--text); }
+select option { background: #1a1a1a; color: var(--text); padding: 10px; }
+.btn { padding: 14px 28px; border-radius: 12px; font-size: 15px; font-weight: 600; border: none; cursor: pointer; transition: all 0.2s; font-family: inherit; background: var(--surface); color: var(--text); border: 1px solid var(--border); }
+.btn:hover { background: var(--surface-hover); }
+.stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 24px; margin-bottom: 48px; animation: fadeIn 0.8s ease 0.4s both; }
+.stat-card { background: var(--surface); backdrop-filter: blur(40px); border: 1px solid var(--border); border-radius: 20px; padding: 32px; transition: all 0.3s; position: relative; overflow: hidden; }
+.stat-card::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px; background: linear-gradient(90deg, var(--accent), var(--success)); opacity: 0; transition: opacity 0.3s; }
+.stat-card:hover { transform: translateY(-6px); box-shadow: 0 20px 40px rgba(0,0,0,0.4); }
+.stat-card:hover::before { opacity: 1; }
+.stat-value { font-size: 48px; font-weight: 700; background: linear-gradient(135deg, var(--text), var(--text2)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; margin-bottom: 8px; letter-spacing: -0.02em; font-variant-numeric: tabular-nums; }
+.stat-label { font-size: 14px; color: var(--text2); font-weight: 500; }
 .ao-list { display: grid; gap: 24px; }
-.ao-card { background: var(--surface); border: 1px solid var(--border); border-left: 4px solid var(--accent); border-radius: 20px; padding: 28px; transition: all 0.3s; }
-.ao-card:hover { transform: translateX(8px); box-shadow: 0 20px 40px rgba(0,0,0,0.5); }
-.ao-header { display: flex; justify-content: space-between; margin-bottom: 20px; gap: 20px; }
-.ao-title { font-size: 22px; font-weight: 600; margin-bottom: 8px; }
-.ao-client { color: var(--text2); font-size: 15px; }
-.badge { padding: 6px 14px; border-radius: 100px; font-size: 13px; font-weight: 600; background: linear-gradient(135deg, rgba(0,113,227,0.15), rgba(48,209,88,0.15)); color: var(--accent); border: 1px solid rgba(0,113,227,0.3); }
+.ao-card { background: var(--surface); backdrop-filter: blur(40px); border: 1px solid var(--border); border-radius: 20px; padding: 28px; transition: all 0.4s; position: relative; overflow: hidden; }
+.ao-card::after { content: ''; position: absolute; top: 0; left: 0; width: 4px; height: 100%; background: linear-gradient(180deg, var(--accent), var(--success)); opacity: 0; transition: opacity 0.3s; }
+.ao-card:hover { transform: translateX(8px) translateY(-4px); box-shadow: 0 24px 48px rgba(0,0,0,0.5); }
+.ao-card:hover::after { opacity: 1; }
+.ao-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 20px; gap: 20px; }
+.ao-title { font-size: 22px; font-weight: 600; letter-spacing: -0.01em; margin-bottom: 8px; line-height: 1.3; }
+.ao-client { color: var(--text2); font-size: 15px; display: flex; align-items: center; gap: 6px; }
+.badge { padding: 6px 14px; border-radius: 100px; font-size: 13px; font-weight: 600; white-space: nowrap; background: linear-gradient(135deg, rgba(0,113,227,0.15), rgba(48,209,88,0.15)); color: var(--accent); border: 1px solid rgba(0,113,227,0.3); }
 .ao-meta { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 20px; padding: 20px; background: rgba(0,0,0,0.3); border-radius: 16px; margin-bottom: 20px; }
 .meta-item { display: flex; flex-direction: column; gap: 4px; }
-.meta-label { font-size: 12px; color: var(--text3); font-weight: 500; text-transform: uppercase; }
-.meta-value { font-size: 16px; font-weight: 600; color: var(--text); }
-.ao-link { display: inline-flex; align-items: center; gap: 8px; color: var(--accent); text-decoration: none; font-weight: 600; }
+.meta-label { font-size: 12px; color: var(--text3); font-weight: 500; }
+.meta-value { font-size: 16px; font-weight: 600; color: var(--text); font-variant-numeric: tabular-nums; }
+.ao-desc { color: var(--text2); line-height: 1.6; margin-bottom: 20px; font-size: 15px; }
+.ao-link { display: inline-flex; align-items: center; gap: 8px; color: var(--accent); text-decoration: none; font-weight: 600; font-size: 15px; transition: all 0.2s; }
 .ao-link:hover { gap: 12px; }
-.loading { text-align: center; padding: 100px; color: var(--text2); }
-.spinner { width: 50px; height: 50px; border: 3px solid rgba(255,255,255,0.1); border-top-color: var(--accent); border-radius: 50%; animation: spin 0.8s linear infinite; margin: 0 auto 20px; }
+.loading { text-align: center; padding: 100px 40px; }
+.spinner { width: 60px; height: 60px; border: 3px solid rgba(255,255,255,0.1); border-top-color: var(--accent); border-radius: 50%; animation: spin 0.8s linear infinite; margin: 0 auto 24px; }
 @keyframes spin { to { transform: rotate(360deg); } }
+.toast { position: fixed; bottom: 32px; right: 32px; background: var(--surface); backdrop-filter: blur(40px); border: 1px solid var(--border); border-radius: 16px; padding: 20px 28px; box-shadow: 0 16px 48px rgba(0,0,0,0.6); transform: translateY(120px); opacity: 0; transition: all 0.4s; z-index: 1000; font-size: 15px; font-weight: 500; }
+.toast.show { transform: translateY(0); opacity: 1; }
+@keyframes fadeIn { from { opacity: 0; transform: translateY(30px); } to { opacity: 1; transform: translateY(0); } }
+.load-more { text-align: center; padding: 40px; }
+.load-more .btn { background: var(--accent); color: white; }
+.load-more .btn:hover { background: #0077ed; }
+@media (max-width: 768px) { .hero h1 { font-size: 48px; } .hero p { font-size: 20px; } .container { padding: 0 20px; } .filters { padding: 24px; } .filter-grid { grid-template-columns: 1fr; } .ao-header { flex-direction: column; } .stat-value { font-size: 36px; } }
 </style>
 </head>
 <body>
+<div class="bg-gradient"></div>
 <div class="hero">
 <h1>AOFinder</h1>
-<p>Appels d'offres informatique BOAMP</p>
+<p>Appels d'offres informatique</p>
+<div class="sources-badge"><div class="live"></div><span>API BOAMP Officielle</span></div>
 </div>
 <div class="container">
 <div class="filters">
 <div class="filter-grid">
-<div class="filter-group"><label>Recherche</label><input type="text" id="search" placeholder="Ex: cloud..." oninput="load()"></div>
-<div class="filter-group"><label>Budget min (€)</label><input type="number" id="min" placeholder="50000" oninput="load()"></div>
-<div class="filter-group"><label>Budget max (€)</label><input type="number" id="max" placeholder="500000" oninput="load()"></div>
-<div class="filter-group"><label>Département</label>
-<select id="dept" onchange="load()">
-<option value="">Toute la France</option>
-<optgroup label="Île-de-France">
-<option value="75">75 - Paris</option>
-<option value="92">92 - Hauts-de-Seine</option>
-<option value="93">93 - Seine-Saint-Denis</option>
-<option value="94">94 - Val-de-Marne</option>
-<option value="91">91 - Essonne</option>
-<option value="78">78 - Yvelines</option>
-<option value="77">77 - Seine-et-Marne</option>
-<option value="95">95 - Val-d'Oise</option>
-</optgroup>
-<optgroup label="Grand Est">
-<option value="67">67 - Bas-Rhin</option>
-<option value="68">68 - Haut-Rhin</option>
-<option value="54">54 - Meurthe-et-Moselle</option>
-<option value="57">57 - Moselle</option>
-<option value="51">51 - Marne</option>
-<option value="08">08 - Ardennes</option>
-</optgroup>
-<optgroup label="Autres">
-<option value="69">69 - Rhône</option>
-<option value="33">33 - Gironde</option>
-<option value="31">31 - Haute-Garonne</option>
-<option value="13">13 - Bouches-du-Rhône</option>
-<option value="59">59 - Nord</option>
-<option value="44">44 - Loire-Atlantique</option>
-</optgroup>
-</select>
-</div>
+<div class="filter-group"><label>Recherche</label><input type="text" id="search" placeholder="Ex: cloud, cybersécurité..." oninput="debounceSearch()"></div>
+<div class="filter-group"><label>Budget minimum (€)</label><input type="number" id="min" placeholder="Ex: 50 000 €" oninput="debounceSearch()"></div>
+<div class="filter-group"><label>Budget maximum (€)</label><input type="number" id="max" placeholder="Ex: 500 000 €" oninput="debounceSearch()"></div>
 </div>
 <button class="btn" onclick="reset()">Réinitialiser</button>
 </div>
 <div class="stats">
-<div class="stat-card"><div class="stat-value" id="tot">-</div><div class="stat-label">AO</div></div>
-<div class="stat-card"><div class="stat-value" id="bud">0 €</div><div class="stat-label">Budget</div></div>
+<div class="stat-card"><div class="stat-value" id="tot">-</div><div class="stat-label">Appels d'offres</div></div>
+<div class="stat-card"><div class="stat-value" id="bud">0 €</div><div class="stat-label">Budget cumulé</div></div>
 <div class="stat-card"><div class="stat-value" id="rec">-</div><div class="stat-label">MAJ</div></div>
 </div>
 <div id="res"></div>
 </div>
+<div class="toast" id="toast"></div>
 <script>
-let data = [];
-let timer;
+const API_BASE = 'https://boamp-datadila.opendatasoft.com/api/records/1.0/search/';
+let allAO = [];
+let displayed = 0;
+const PER_PAGE = 50;
+let searchTimeout;
 
-async function load() {
-  clearTimeout(timer);
-  timer = setTimeout(async () => {
-    const s = document.getElementById('search').value;
-    const d = document.getElementById('dept').value;
-    const min = document.getElementById('min').value || 0;
-    const max = document.getElementById('max').value || 999999999;
-    const c = document.getElementById('res');
+// Mapping départements vers régions
+const REGIONS = {
+  '75':'Île-de-France','77':'Île-de-France','78':'Île-de-France','91':'Île-de-France','92':'Île-de-France','93':'Île-de-France','94':'Île-de-France','95':'Île-de-France',
+  '67':'Grand Est','68':'Grand Est','54':'Grand Est','57':'Grand Est','51':'Grand Est','08':'Grand Est','10':'Grand Est','52':'Grand Est','55':'Grand Est','88':'Grand Est',
+  '69':'Auvergne-Rhône-Alpes','01':'Auvergne-Rhône-Alpes','03':'Auvergne-Rhône-Alpes','07':'Auvergne-Rhône-Alpes','15':'Auvergne-Rhône-Alpes','26':'Auvergne-Rhône-Alpes','38':'Auvergne-Rhône-Alpes','42':'Auvergne-Rhône-Alpes','43':'Auvergne-Rhône-Alpes','63':'Auvergne-Rhône-Alpes','73':'Auvergne-Rhône-Alpes','74':'Auvergne-Rhône-Alpes',
+  '13':'PACA','06':'PACA','83':'PACA','84':'PACA','04':'PACA','05':'PACA',
+  '31':'Occitanie','34':'Occitanie','30':'Occitanie','11':'Occitanie','66':'Occitanie','09':'Occitanie','12':'Occitanie','32':'Occitanie','46':'Occitanie','48':'Occitanie','65':'Occitanie','81':'Occitanie','82':'Occitanie',
+  '33':'Nouvelle-Aquitaine','24':'Nouvelle-Aquitaine','40':'Nouvelle-Aquitaine','47':'Nouvelle-Aquitaine','64':'Nouvelle-Aquitaine','16':'Nouvelle-Aquitaine','17':'Nouvelle-Aquitaine','19':'Nouvelle-Aquitaine','23':'Nouvelle-Aquitaine','79':'Nouvelle-Aquitaine','86':'Nouvelle-Aquitaine','87':'Nouvelle-Aquitaine',
+  '59':'Hauts-de-France','62':'Hauts-de-France','02':'Hauts-de-France','60':'Hauts-de-France','80':'Hauts-de-France',
+  '44':'Pays de la Loire','49':'Pays de la Loire','53':'Pays de la Loire','72':'Pays de la Loire','85':'Pays de la Loire',
+  '35':'Bretagne','22':'Bretagne','29':'Bretagne','56':'Bretagne',
+  '76':'Normandie','14':'Normandie','27':'Normandie','50':'Normandie','61':'Normandie'
+};
+
+async function loadAO() {
+  const searchTerm = document.getElementById('search').value;
+  const container = document.getElementById('res');
+  
+  container.innerHTML = '<div class="loading"><div class="spinner"></div><h3>Chargement...</h3></div>';
+  
+  try {
+    let query = 'informatique OR IT OR cloud OR logiciel OR software';
+    if (searchTerm) query = searchTerm;
     
-    c.innerHTML = '<div class="loading"><div class="spinner"></div><p>Chargement...</p></div>';
+    const params = new URLSearchParams({
+      dataset: 'boamp',
+      q: query,
+      rows: 1000,
+      sort: 'dateparution',
+      facet: ['famillecpv', 'departement']
+    });
     
-    try {
-      const params = new URLSearchParams({search: s, dept: d, min, max});
-      const r = await fetch('/api/ao?' + params);
-      const json = await r.json();
-      
-      if (json.error) throw new Error(json.message);
-      
-      data = json.results || [];
-      display();
-      
-    } catch (e) {
-      c.innerHTML = `<div class="loading"><h3>Erreur</h3><p>${e.message}</p><button class="btn" onclick="load()" style="margin-top:20px;">Réessayer</button></div>`;
+    const response = await fetch(API_BASE + '?' + params);
+    const data = await response.json();
+    
+    if (!data.records) {
+      toast('⚠️ Erreur');
+      return;
     }
-  }, 300);
+    
+    allAO = data.records.map(record => {
+      const f = record.fields;
+      
+      // EXTRACTION LOCALISATION
+      const dept = f.departement || '';
+      const commune = f.commune || '';
+      const region = REGIONS[dept] || '';
+      
+      // Construction : Région · Département · Commune
+      const locParts = [];
+      if (region) locParts.push(region);
+      if (dept) locParts.push(dept);
+      if (commune) locParts.push(commune);
+      const location = locParts.length > 0 ? locParts.join(' · ') : 'Non spécifié';
+      
+      return {
+        id: f.idweb || 'N/A',
+        title: f.objet || 'Sans titre',
+        client: f.denominationsociale || f.nomentite || 'Non spécifié',
+        budget: extractBudget(f),
+        deadline: f.datelimitereponse || 'N/A',
+        location: location,
+        description: (f.descriptionlots || f.objetmarche || '').substring(0, 200),
+        url: f.urlannonce || `https://www.boamp.fr/avis/detail/${f.idweb}`,
+        source: 'BOAMP',
+        publishDate: f.dateparution || ''
+      };
+    });
+    
+    displayed = 0;
+    displayAO();
+    updateStats(data.nhits);
+    toast(`✓ ${data.nhits} AO trouvés`);
+    
+  } catch (error) {
+    console.error('Erreur:', error);
+    container.innerHTML = '<div class="loading"><h3>⚠️ Erreur de chargement</h3></div>';
+    toast('⚠️ Erreur');
+  }
 }
 
-function display() {
-  const c = document.getElementById('res');
-  if (!data.length) {
-    c.innerHTML = '<div class="loading"><h3>Aucun AO trouvé</h3></div>';
-    document.getElementById('tot').textContent = '0';
-    document.getElementById('bud').textContent = '0 €';
+function extractBudget(f) {
+  const m = f.montant || f.valeurestimee || f.montantmarche || 0;
+  if (typeof m === 'string') return parseInt(m.replace(/[^0-9]/g, '')) || 0;
+  return parseInt(m) || 0;
+}
+
+function displayAO() {
+  const container = document.getElementById('res');
+  const search = document.getElementById('search').value.toLowerCase();
+  const min = parseInt(document.getElementById('min').value) || 0;
+  const max = parseInt(document.getElementById('max').value) || 999999999;
+  
+  let filtered = allAO.filter(ao => {
+    if (search && !ao.title.toLowerCase().includes(search) && !ao.description.toLowerCase().includes(search)) return false;
+    if (ao.budget < min || ao.budget > max) return false;
+    return true;
+  });
+  
+  const toShow = filtered.slice(0, displayed + PER_PAGE);
+  displayed += PER_PAGE;
+  
+  if (!toShow.length) {
+    container.innerHTML = '<div class="loading"><h3>Aucun AO trouvé</h3></div>';
     return;
   }
   
-  let h = '<div class="ao-list">';
-  data.forEach(ao => {
-    const loc = [ao.region, ao.dept + ' - ' + ao.deptName, ao.commune].filter(x => x && x !== 'France').join(' · ') || 'France';
-    h += `<div class="ao-card">
+  let html = '<div class="ao-list">';
+  toShow.forEach(ao => {
+    html += `<div class="ao-card">
       <div class="ao-header">
-        <div><div class="ao-title">${ao.title}</div><div class="ao-client">📍 ${ao.client}</div></div>
+        <div>
+          <div class="ao-title">${ao.title}</div>
+          <div class="ao-client">📍 ${ao.location}</div>
+        </div>
         <div class="badge">📡 ${ao.source}</div>
       </div>
       <div class="ao-meta">
-        <div class="meta-item"><div class="meta-label">Ref</div><div class="meta-value">${ao.id}</div></div>
-        <div class="meta-item"><div class="meta-label">Budget</div><div class="meta-value">${ao.budget > 0 ? fmt(ao.budget) : 'N/C'}</div></div>
-        <div class="meta-item"><div class="meta-label">Deadline</div><div class="meta-value">${fmtD(ao.deadline)}</div></div>
-        <div class="meta-item"><div class="meta-label">Localisation</div><div class="meta-value">${loc}</div></div>
+        <div class="meta-item"><div class="meta-label">RÉFÉRENCE</div><div class="meta-value">${ao.id}</div></div>
+        <div class="meta-item"><div class="meta-label">BUDGET</div><div class="meta-value">${ao.budget > 0 ? fmt(ao.budget) : 'N/C'}</div></div>
+        <div class="meta-item"><div class="meta-label">DEADLINE</div><div class="meta-value">${fmtD(ao.deadline)}</div></div>
+        <div class="meta-item"><div class="meta-label">CLIENT</div><div class="meta-value">${ao.client}</div></div>
       </div>
+      <div class="ao-desc">${ao.description || ''}</div>
       <a href="${ao.url}" target="_blank" class="ao-link">Voir l'annonce <span>→</span></a>
     </div>`;
   });
-  h += '</div>';
-  c.innerHTML = h;
+  html += '</div>';
   
-  document.getElementById('tot').textContent = data.length;
-  document.getElementById('bud').textContent = fmt(data.reduce((s, a) => s + a.budget, 0));
+  if (displayed < filtered.length) {
+    html += `<div class="load-more"><button class="btn" onclick="displayAO()">Charger plus (${filtered.length - displayed})</button></div>`;
+  }
+  
+  container.innerHTML = html;
+  document.getElementById('tot').textContent = filtered.length.toLocaleString('fr-FR');
+}
+
+function updateStats(total) {
+  document.getElementById('tot').textContent = total.toLocaleString('fr-FR');
+  const totalBudget = allAO.reduce((sum, ao) => sum + ao.budget, 0);
+  document.getElementById('bud').textContent = fmt(totalBudget);
   document.getElementById('rec').textContent = new Date().toLocaleDateString('fr-FR');
+}
+
+function debounceSearch() {
+  clearTimeout(searchTimeout);
+  searchTimeout = setTimeout(() => {
+    displayed = 0;
+    displayAO();
+  }, 500);
 }
 
 function reset() {
   document.getElementById('search').value = '';
   document.getElementById('min').value = '';
   document.getElementById('max').value = '';
-  document.getElementById('dept').value = '';
-  load();
+  loadAO();
 }
 
-function fmt(n) { return new Intl.NumberFormat('fr-FR', {style: 'currency', currency: 'EUR', maximumFractionDigits: 0}).format(n); }
-function fmtD(d) { if (!d || d === 'N/A') return 'N/A'; try { return new Date(d).toLocaleDateString('fr-FR'); } catch { return d; } }
+function fmt(n) {
+  return new Intl.NumberFormat('fr-FR', {style: 'currency', currency: 'EUR', maximumFractionDigits: 0}).format(n);
+}
 
-window.onload = () => load();
+function fmtD(d) {
+  if (!d || d === 'N/A') return 'N/A';
+  try {
+    return new Date(d).toLocaleDateString('fr-FR');
+  } catch {
+    return d;
+  }
+}
+
+function toast(m) {
+  const t = document.getElementById('toast');
+  t.textContent = m;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 4000);
+}
+
+window.onload = () => loadAO();
 </script>
 </body>
 </html>
