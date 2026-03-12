@@ -178,121 +178,134 @@ async function loadAO() {
       };
     });
     
-    // ===== ALGORITHME DE CLASSIFICATION IT =====
-    // Score > 0 = IT, Score <= 0 = PAS IT
+    // ========================================
+    // FILTRE IT ULTRA STRICT - WHITELIST ONLY
+    // ========================================
     
-    allAO = allAO.filter(ao => {
+    function estUnAOInformatique(ao) {
       const titre = ao.title.toLowerCase();
       const desc = ao.description.toLowerCase();
-      const texte = titre + ' ' + desc;
       
-      let score = 0;
+      // === ÉTAPE 1: BLACKLIST ABSOLUE (exclut immédiatement) ===
+      const blacklist = [
+        'urbanisme', 'géotechnique', 'pollution', 'diagnostic pollution', 'essai de sol',
+        'ascenseur', 'monte-charge', 'élévateur',
+        'nettoyage', 'propreté', 'entretien des locaux',
+        'restauration', 'repas', 'cantine', 'cuisine', 'alimentaire', 'denrées',
+        'gardiennage', 'surveillance', 'agent de sécurité',
+        'espaces verts', 'jardin', 'paysage', 'végétaux',
+        'déchets', 'ordures', 'collecte', 'tri',
+        'bâtiment', 'construction', 'gros œuvre', 'second œuvre', 'travaux',
+        'maçonnerie', 'charpente', 'couverture', 'toiture',
+        'plomberie', 'sanitaire', 'chauffage', 'climatisation', 'ventilation', 'cvc',
+        'électricité bâtiment', 'courant fort', 'tableau électrique',
+        'menuiserie', 'serrurerie', 'vitrerie', 'fermeture',
+        'peinture', 'revêtement', 'sol', 'carrelage', 'parquet',
+        'transport', 'car', 'bus', 'véhicule', 'automobile',
+        'assainissement', 'eau potable', 'eaux usées', 'fosse', 'bac à graisse', 'canalisation',
+        'voirie', 'route', 'chaussée', 'enrobé', 'bitume',
+        'mobilier urbain', 'signalisation', 'éclairage public',
+        'textile', 'vêtement', 'linge', 'blanchisserie',
+        'fourniture de bureau', 'papeterie', 'consommable',
+        'impression papier', 'photocopie', 'reprographie',
+        'énergie', 'gaz', 'électricité fourniture',
+        'assurance', 'mutuelle', 'banque'
+      ];
       
-      // === MOTS CLÉS IT FORTS (+10 points) ===
-      const motsForts = [
-        'logiciel', 'software', 'application', 'système d\'information', 'systeme d\'information',
-        'infrastructure informatique', 'parc informatique', 'matériel informatique',
-        'serveur', 'cloud', 'saas', 'paas', 'iaas', 'azure', 'aws', 'google cloud',
-        'développement', 'programmation', 'code source', 'api',
-        'base de données', 'bdd', 'sql', 'oracle', 'mysql', 'postgresql',
-        'cybersécurité', 'cyber-sécurité', 'sécurité informatique', 'pare-feu', 'firewall', 'antivirus',
-        'erp', 'crm', 'sirh', 'ged', 'gmao',
-        'hébergement web', 'datacenter', 'data center',
+      for (let mot of blacklist) {
+        if (titre.includes(mot) || desc.includes(mot)) {
+          return false;  // EXCLU
+        }
+      }
+      
+      // === ÉTAPE 2: WHITELIST IT (doit matcher au moins UN) ===
+      const whitelistIT = [
+        // Logiciels
+        'logiciel', 'software', 'progiciel', 'suite logicielle', 'licence logiciel',
+        'microsoft', 'office 365', 'windows', 'adobe', 'autocad',
+        
+        // Infrastructure & Cloud
+        'serveur informatique', 'infrastructure informatique', 'datacenter', 'data center',
+        'cloud', 'saas', 'paas', 'iaas', 'azure', 'aws', 'google cloud', 'ovh',
+        'hébergement web', 'hébergement application',
         'virtualisation', 'vmware', 'hyper-v',
-        'réseau informatique', 'switch', 'routeur', 'wifi', 'lan', 'wan',
-        'téléphonie ip', 'voip', 'visioconférence',
-        'poste de travail', 'ordinateur', 'pc', 'laptop', 'tablette informatique',
-        'licence microsoft', 'licence oracle', 'abonnement logiciel',
-        'site web', 'site internet', 'portail web', 'plateforme web', 'application mobile',
-        'big data', 'analytics', 'business intelligence', 'data science',
+        
+        // Réseau & Télécom IT
+        'réseau informatique', 'infrastructure réseau', 'équipement réseau',
+        'switch', 'routeur', 'firewall', 'wifi', 'borne wifi',
+        'téléphonie ip', 'voip', 'ipbx', 'visioconférence',
+        'fibre optique informatique', 'câblage informatique',
+        
+        // Matériel informatique
+        'matériel informatique', 'parc informatique', 'équipement informatique',
+        'ordinateur', 'poste de travail', 'pc', 'laptop', 'portable informatique',
+        'tablette numérique', 'écran ordinateur', 'moniteur',
+        'imprimante réseau', 'scanner informatique', 'périphérique informatique',
+        
+        // Sécurité IT
+        'cybersécurité', 'cyber-sécurité', 'sécurité informatique', 'sécurité si',
+        'antivirus', 'pare-feu informatique', 'sauvegarde informatique', 'backup',
+        'protection données', 'rgpd technique',
+        
+        // Développement & Applications
+        'développement logiciel', 'développement application', 'développement web',
+        'application métier', 'application mobile', 'app mobile',
+        'site web', 'site internet', 'portail web', 'plateforme web',
+        'api', 'interface applicative',
+        
+        // Data & BI
+        'base de données', 'bdd', 'sgbd', 'sql', 'oracle database', 'mysql', 'postgresql',
+        'big data', 'data analytics', 'business intelligence', 'bi',
+        'entrepôt de données', 'datawarehouse',
+        
+        // SI & Gestion
+        'système d\'information', 'système information', 'si',
+        'erp', 'sap', 'peoplesoft',
+        'crm', 'salesforce',
+        'sirh', 'gestion rh informatisée',
+        'ged électronique', 'gestion documentaire électronique',
+        'gmao informatique',
+        
+        // Services IT
+        'maintenance informatique', 'support informatique', 'assistance informatique',
+        'infogérance', 'infogérance informatique', 'externalisation it',
+        'tierce maintenance applicative', 'tma',
+        'intégration système', 'migration informatique',
+        
+        // Innovation IT
         'intelligence artificielle', 'machine learning', 'ia',
-        'maintenance informatique', 'support informatique', 'infogérance',
-        'migration système', 'mise à jour informatique', 'upgrade système'
+        'iot', 'internet des objets connectés',
+        'blockchain', 'smart contract',
+        
+        // Divers IT
+        'dématérialisation', 'numérisation document', 'archivage électronique',
+        'signature électronique', 'certificat électronique'
       ];
       
-      for (let mot of motsForts) {
-        if (texte.includes(mot)) {
-          score += 10;
+      // Cherche dans le TITRE en priorité
+      for (let mot of whitelistIT) {
+        if (titre.includes(mot)) {
+          return true;  // C'EST DE L'IT !
         }
       }
       
-      // === MOTS CLÉS IT MOYENS (+5 points) ===
-      const motsMoyens = [
-        'informatique', 'numérique', 'digital', 'technologie',
-        'data', 'données', 'fichier', 'stockage',
-        'réseau', 'connexion', 'internet', 'intranet',
-        'sécurité', 'sauvegarde', 'backup',
-        'gestion électronique', 'dématérialisation', 'numérisation'
+      // Si rien dans le titre, cherche dans description (plus strict)
+      const whitelistStrictDesc = [
+        'logiciel', 'serveur', 'cloud', 'réseau informatique', 'système d\'information',
+        'infrastructure informatique', 'cybersécurité', 'développement application'
       ];
       
-      for (let mot of motsMoyens) {
-        if (texte.includes(mot)) {
-          score += 5;
+      for (let mot of whitelistStrictDesc) {
+        if (desc.includes(mot)) {
+          return true;
         }
       }
       
-      // === MOTS CLÉS IT FAIBLES (+2 points) ===
-      const motsFaibles = [
-        'système', 'plateforme', 'solution', 'outil',
-        'équipement', 'matériel', 'fourniture'
-      ];
-      
-      for (let mot of motsFaibles) {
-        if (titre.includes(mot)) {  // Seulement dans le titre
-          score += 2;
-        }
-      }
-      
-      // === MOTS D'EXCLUSION ABSOLUE (-100 points) ===
-      const exclusionsAbsolues = [
-        'ascenseur', 'monte-charge', 'mobilité verticale',
-        'nettoyage', 'entretien des locaux', 'propreté',
-        'restauration collective', 'repas', 'cantine', 'cuisine',
-        'alimentaire', 'denrées', 'microbiologie',
-        'gardiennage', 'sécurité incendie', 'agent de sécurité',
-        'espaces verts', 'paysagiste', 'jardinage',
-        'déchets', 'collecte ordures', 'tri sélectif',
-        'bâtiment', 'construction', 'travaux', 'rénovation', 'maçonnerie',
-        'plomberie', 'chauffage', 'ventilation', 'climatisation',
-        'électricité bâtiment', 'installation électrique',
-        'menuiserie', 'serrurerie', 'vitrerie',
-        'peinture', 'revêtement sol', 'carrelage',
-        'transport', 'véhicule', 'car', 'bus',
-        'assainissement', 'eau potable', 'eaux usées', 'bac à graisse',
-        'voirie', 'chaussée', 'enrobé', 'bitume'
-      ];
-      
-      for (let mot of exclusionsAbsolues) {
-        if (texte.includes(mot)) {
-          score -= 100;
-        }
-      }
-      
-      // === PATTERNS D'EXCLUSION (-50 points) ===
-      const patternsExclusion = [
-        /fourniture.*produit/i,
-        /entretien.*espaces/i,
-        /maintenance.*bâtiment/i,
-        /travaux.*construction/i,
-        /prestation.*nettoyage/i,
-        /marché.*alimentaire/i
-      ];
-      
-      for (let pattern of patternsExclusion) {
-        if (pattern.test(texte)) {
-          score -= 50;
-        }
-      }
-      
-      // === VALIDATION FINALE ===
-      // Si le titre contient "informatique" ou "logiciel" direct = OK
-      if (titre.includes('informatique') || titre.includes('logiciel') || titre.includes('système d\'information')) {
-        score += 20;
-      }
-      
-      // Si score >= 10 = AO informatique
-      return score >= 10;
-    });
+      return false;  // PAS IT
+    }
+    
+    // Appliquer le filtre
+    allAO = allAO.filter(ao => estUnAOInformatique(ao));
     
     displayed = 0;
     displayAO();
