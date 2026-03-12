@@ -174,8 +174,8 @@ def get_ao():
         if search:
             where = f'(objet LIKE "%{search}%")'
         
-        if dept:
-            where += f' AND departement="{dept}"'
+        # Ne PAS filtrer par département dans la requête API
+        # On va filtrer côté serveur après avoir reçu les résultats
         
         params = {
             'where': where,
@@ -184,6 +184,8 @@ def get_ao():
         }
         
         print(f"🔍 Requête BOAMP: {where}")
+        if dept:
+            print(f"📍 Filtre département côté serveur: {dept}")
         
         # Appeler l'API BOAMP
         response = requests.get(BOAMP_API, params=params, timeout=30)
@@ -216,6 +218,11 @@ def get_ao():
                     continue
                 
                 dept_code = fields.get('departement', '')
+                
+                # Filtrer par département côté serveur
+                if dept and dept_code != dept:
+                    continue
+                
                 dept_info = get_dept_info(dept_code)
                 
                 results.append({
