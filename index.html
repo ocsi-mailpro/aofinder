@@ -179,6 +179,31 @@ async function loadAO() {
       };
     });
     
+    // FILTRE STRICT IT - Vire tout ce qui est pas vraiment IT
+    const motsClesIT = ['informatique', 'logiciel', 'software', 'cloud', 'serveur', 'réseau', 'cyber', 'numérique', 'système d\'information', 'application', 'plateforme', 'données', 'base de données', 'développement', 'infrastructure IT', 'hébergement', 'saas', 'erp', 'crm', 'sécurité informatique', 'matériel informatique', 'ordinateur', 'poste de travail', 'téléphonie IP', 'virtualisation'];
+    const motsAExclure = ['ascenseur', 'mobilité verticale', 'alimentaire', 'restauration', 'nettoyage', 'gardiennage', 'bâtiment', 'travaux', 'construction'];
+    
+    allAO = allAO.filter(ao => {
+      const titre = ao.title.toLowerCase();
+      const desc = ao.description.toLowerCase();
+      
+      // Exclure si contient des mots à exclure
+      for (let mot of motsAExclure) {
+        if (titre.includes(mot) || desc.includes(mot)) {
+          return false;
+        }
+      }
+      
+      // Inclure seulement si contient au moins 1 mot clé IT
+      for (let mot of motsClesIT) {
+        if (titre.includes(mot)) {
+          return true;
+        }
+      }
+      
+      return false;
+    });
+    
     displayed = 0;
     displayAO();
     updateStats(data.nhits);
