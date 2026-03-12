@@ -130,21 +130,15 @@ async function loadAO() {
   container.innerHTML = '<div class="loading"><div class="spinner"></div><h3>Chargement...</h3></div>';
   
   try {
-    // Codes CPV pour marchés informatiques
-    // 48000000 = Logiciels, 72000000 = Services informatiques, 30200000 = Matériel informatique
+    // Recherche DANS LE TITRE UNIQUEMENT avec q.objet=
+    let query = searchTerm || 'informatique';
+    
     const params = new URLSearchParams({
       dataset: 'boamp',
+      'q.objet': query + ' OR logiciel OR cloud OR IT OR numérique',  // Cherche QUE dans le titre
       rows: 1000,
-      sort: 'dateparution',
-      refine: {
-        'codefamillecpv': ['48', '72', '30']  // Codes CPV informatique
-      }
+      sort: 'dateparution'
     });
-    
-    // Ajoute recherche texte si demandée
-    if (searchTerm) {
-      params.set('q', searchTerm);
-    }
     
     const response = await fetch(API_BASE + '?' + params);
     const data = await response.json();
