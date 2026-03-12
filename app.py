@@ -2,6 +2,7 @@ from flask import Flask, jsonify, request, send_from_directory
 from flask_cors import CORS
 import requests
 import os
+import traceback
 
 app = Flask(__name__, static_folder='.')
 CORS(app)
@@ -58,6 +59,69 @@ DEPTS = {
     '92': {'region': 'Île-de-France', 'name': 'Hauts-de-Seine'}, '93': {'region': 'Île-de-France', 'name': 'Seine-Saint-Denis'},
     '94': {'region': 'Île-de-France', 'name': 'Val-de-Marne'}, '95': {'region': 'Île-de-France', 'name': "Val-d'Oise"},
 }
+
+@app.route('/debug')
+def debug():
+    """Page de debug pour tester BOAMP"""
+    try:
+        print("\n🧪 TEST DEBUG BOAMP")
+        
+        # Test 1: Ping BOAMP
+        resp = requests.get(BOAMP_API, params={'limit': 1}, timeout=10)
+        status = resp.status_code
+        
+        # Test 2: Requête informatique
+        resp2 = requests.get(BOAMP_API, params={
+            'where': '(objet LIKE "%informatique%")',
+            'limit': 10
+        }, timeout=30)
+        
+        data = resp2.json() if resp2.status_code == 200 else {}
+        results = data.get('results', [])
+        
+        # Afficher les départements
+        depts = [r.get('fields', {}).get('departement', 'N/A') for r in results]
+        
+        html = f"""
+        <html>
+        <head><title>Debug BOAMP</title></head>
+        <body style="font-family: monospace; padding: 40px; background: #000; color: #0f0;">
+        <h1>🧪 Test BOAMP</h1>
+        <hr>
+        <h2>Test 1: Connexion BOAMP</h2>
+        <p>Status: <strong>{status}</strong> {'✅ OK' if status == 200 else '❌ ERREUR'}</p>
+        
+        <h2>Test 2: Requête informatique</h2>
+        <p>Status: <strong>{resp2.status_code}</strong> {'✅ OK' if resp2.status_code == 200 else '❌ ERREUR'}</p>
+        <p>Résultats trouvés: <strong>{len(results)}</strong></p>
+        
+        <h2>Départements dans les résultats:</h2>
+        <p>{depts}</p>
+        
+        <h2>Premier AO (si existe):</h2>
+        <pre>{results[0] if results else 'Aucun résultat'}</pre>
+        
+        <h2>Réponse brute BOAMP:</h2>
+        <pre>{data}</pre>
+        
+        <hr>
+        <p><a href="/" style="color: #0ff;">← Retour au site</a></p>
+        </body>
+        </html>
+        """
+        
+        return html
+        
+    except Exception as e:
+        return f"""
+        <html>
+        <body style="font-family: monospace; padding: 40px; background: #000; color: #f00;">
+        <h1>❌ ERREUR DEBUG</h1>
+        <pre>{str(e)}</pre>
+        <pre>{traceback.format_exc()}</pre>
+        </body>
+        </html>
+        """
 
 @app.route('/')
 def index():
@@ -122,13 +186,22 @@ def get_ao():
                     continue
                 
                 # Département
-                dept = f.get('departement', '')
+                dept = f.get('departement', '').strip()
                 
-                # Filtre département
-                if dept_filter and dept != dept_filter:
-                    continue
+                # Filtre département (seulement si un département est demandé ET que l'AO a un département)
+                if dept_filter:
+                    # Si l'AO n'a pas de département, on ne peut pas filtrer dessus
+                    if not dept:
+                        continue
+                    # Sinon on compare
+                    if dept != dept_filter:
+                        continue
                 
-                dinfo = DEPTS.get(dept, {'region': 'France', 'name': dept or 'N/A'})
+                # Info département (ou France si vide)
+                if dept:
+                    dinfo = DEPTS.get(dept, {'region': 'France', 'name': dept})
+                else:
+                    dinfo = {'region': 'France', 'name': 'National'}
                 
                 results.append({
                     'id': f.get('idweb', 'N/A'),
