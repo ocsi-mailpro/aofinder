@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>AOFinder — Appels d'Offres IT</title>
+<title>AOFinder — Appels d'Offres Informatique</title>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
 <style>
 * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -83,7 +83,7 @@ select option { background: #1a1a1a; color: var(--text); padding: 10px; }
 <div class="stats">
 <div class="stat-card"><div class="stat-value" id="tot">-</div><div class="stat-label">Appels d'offres IT</div></div>
 <div class="stat-card"><div class="stat-value" id="bud">0 €</div><div class="stat-label">Budget cumulé</div></div>
-<div class="stat-card"><div class="stat-value" id="rec">-</div><div class="stat-label">Dernière MAJ</div></div>
+<div class="stat-card"><div class="stat-value" id="rec">-</div><div class="stat-label">MAJ</div></div>
 </div>
 <div id="res"></div>
 </div>
@@ -95,36 +95,23 @@ let displayed = 0;
 const PER_PAGE = 50;
 let searchTimeout;
 
+// Départements → Régions et noms
+const REGIONS = {'75':'Île-de-France','77':'Île-de-France','78':'Île-de-France','91':'Île-de-France','92':'Île-de-France','93':'Île-de-France','94':'Île-de-France','95':'Île-de-France','67':'Grand Est','68':'Grand Est','54':'Grand Est','57':'Grand Est','51':'Grand Est','08':'Grand Est','10':'Grand Est','52':'Grand Est','55':'Grand Est','88':'Grand Est','69':'Auvergne-Rhône-Alpes','01':'Auvergne-Rhône-Alpes','03':'Auvergne-Rhône-Alpes','07':'Auvergne-Rhône-Alpes','15':'Auvergne-Rhône-Alpes','26':'Auvergne-Rhône-Alpes','38':'Auvergne-Rhône-Alpes','42':'Auvergne-Rhône-Alpes','43':'Auvergne-Rhône-Alpes','63':'Auvergne-Rhône-Alpes','73':'Auvergne-Rhône-Alpes','74':'Auvergne-Rhône-Alpes','13':'PACA','06':'PACA','83':'PACA','84':'PACA','04':'PACA','05':'PACA','31':'Occitanie','34':'Occitanie','30':'Occitanie','11':'Occitanie','66':'Occitanie','09':'Occitanie','12':'Occitanie','32':'Occitanie','46':'Occitanie','48':'Occitanie','65':'Occitanie','81':'Occitanie','82':'Occitanie','33':'Nouvelle-Aquitaine','24':'Nouvelle-Aquitaine','40':'Nouvelle-Aquitaine','47':'Nouvelle-Aquitaine','64':'Nouvelle-Aquitaine','16':'Nouvelle-Aquitaine','17':'Nouvelle-Aquitaine','19':'Nouvelle-Aquitaine','23':'Nouvelle-Aquitaine','79':'Nouvelle-Aquitaine','86':'Nouvelle-Aquitaine','87':'Nouvelle-Aquitaine','59':'Hauts-de-France','62':'Hauts-de-France','02':'Hauts-de-France','60':'Hauts-de-France','80':'Hauts-de-France','44':'Pays de la Loire','49':'Pays de la Loire','53':'Pays de la Loire','72':'Pays de la Loire','85':'Pays de la Loire','35':'Bretagne','22':'Bretagne','29':'Bretagne','56':'Bretagne','76':'Normandie','14':'Normandie','27':'Normandie','50':'Normandie','61':'Normandie'};
+
+const DEPT_NAMES = {'01':'Ain','02':'Aisne','03':'Allier','04':'Alpes-de-Haute-Provence','05':'Hautes-Alpes','06':'Alpes-Maritimes','07':'Ardèche','08':'Ardennes','09':'Ariège','10':'Aube','11':'Aude','12':'Aveyron','13':'Bouches-du-Rhône','14':'Calvados','15':'Cantal','16':'Charente','17':'Charente-Maritime','18':'Cher','19':'Corrèze','21':'Côte-d\'Or','22':'Côtes-d\'Armor','23':'Creuse','24':'Dordogne','25':'Doubs','26':'Drôme','27':'Eure','28':'Eure-et-Loir','29':'Finistère','30':'Gard','31':'Haute-Garonne','32':'Gers','33':'Gironde','34':'Hérault','35':'Ille-et-Vilaine','36':'Indre','37':'Indre-et-Loire','38':'Isère','39':'Jura','40':'Landes','41':'Loir-et-Cher','42':'Loire','43':'Haute-Loire','44':'Loire-Atlantique','45':'Loiret','46':'Lot','47':'Lot-et-Garonne','48':'Lozère','49':'Maine-et-Loire','50':'Manche','51':'Marne','52':'Haute-Marne','53':'Mayenne','54':'Meurthe-et-Moselle','55':'Meuse','56':'Morbihan','57':'Moselle','58':'Nièvre','59':'Nord','60':'Oise','61':'Orne','62':'Pas-de-Calais','63':'Puy-de-Dôme','64':'Pyrénées-Atlantiques','65':'Hautes-Pyrénées','66':'Pyrénées-Orientales','67':'Bas-Rhin','68':'Haut-Rhin','69':'Rhône','70':'Haute-Saône','71':'Saône-et-Loire','72':'Sarthe','73':'Savoie','74':'Haute-Savoie','75':'Paris','76':'Seine-Maritime','77':'Seine-et-Marne','78':'Yvelines','79':'Deux-Sèvres','80':'Somme','81':'Tarn','82':'Tarn-et-Garonne','83':'Var','84':'Vaucluse','85':'Vendée','86':'Vienne','87':'Haute-Vienne','88':'Vosges','89':'Yonne','90':'Territoire de Belfort','91':'Essonne','92':'Hauts-de-Seine','93':'Seine-Saint-Denis','94':'Val-de-Marne','95':'Val-d\'Oise','971':'Guadeloupe','972':'Martinique','973':'Guyane','974':'La Réunion','976':'Mayotte'};
+
 // FILTRE IT STRICT
 function estIT(titre, desc) {
   const t = titre.toLowerCase();
   const d = desc.toLowerCase();
   
-  // BLACKLIST - Si contient = EXCLU direct
-  const exclu = ['urbanisme','géotechnique','pollution','essai de sol','plu','plan local',
-    'impression papier','imprimerie','routage courrier','brochure papier','flyer','catalogue papier',
-    'ascenseur','monte-charge','nettoyage','propreté','restauration','repas','cantine',
-    'gardiennage','surveillance','espaces verts','jardin','déchets','ordures',
-    'bâtiment','construction','travaux','maçonnerie','plomberie','chauffage','climatisation',
-    'menuiserie','peinture','carrelage','transport','véhicule','car','bus',
-    'assainissement','eau potable','eaux usées','bac à graisse','voirie','route'];
+  const exclu = ['urbanisme','géotechnique','pollution','essai de sol','plu','plan local','impression papier','imprimerie','routage courrier','brochure papier','flyer','catalogue papier','ascenseur','monte-charge','nettoyage','propreté','restauration','repas','cantine','gardiennage','surveillance','espaces verts','jardin','déchets','ordures','bâtiment','construction','travaux','maçonnerie','plomberie','chauffage','climatisation','menuiserie','peinture','carrelage','transport','véhicule','car','bus','assainissement','eau potable','eaux usées','bac à graisse','voirie','route'];
   
   for (let mot of exclu) {
     if (t.includes(mot) || d.includes(mot)) return false;
   }
   
-  // WHITELIST IT - Doit contenir AU MOINS 1
-  const it = ['logiciel','software','serveur','cloud','azure','aws',
-    'infrastructure informatique','parc informatique','système d\'information',
-    'réseau informatique','switch','routeur','wifi','firewall',
-    'téléphonie ip','voip','cybersécurité','cyber','antivirus',
-    'base de données','sql','oracle','mysql',
-    'erp','crm','sirh','ged électronique',
-    'site web','application web','portail web','développement',
-    'poste de travail','ordinateur','matériel informatique',
-    'virtualisation','vmware','sauvegarde informatique','backup',
-    'maintenance informatique','support informatique','infogérance',
-    'dématérialisation','signature électronique','archivage électronique'];
+  const it = ['logiciel','software','serveur','cloud','azure','aws','infrastructure informatique','parc informatique','système d\'information','réseau informatique','switch','routeur','wifi','firewall','téléphonie ip','voip','cybersécurité','cyber','antivirus','base de données','sql','oracle','mysql','erp','crm','sirh','ged électronique','site web','application web','portail web','développement','poste de travail','ordinateur','matériel informatique','virtualisation','vmware','sauvegarde informatique','backup','maintenance informatique','support informatique','infogérance','dématérialisation','signature électronique','archivage électronique'];
   
   for (let mot of it) {
     if (t.includes(mot)) return true;
@@ -137,92 +124,30 @@ async function loadAO() {
   const searchTerm = document.getElementById('search').value;
   const container = document.getElementById('res');
   
-  container.innerHTML = '<div class="loading"><div class="spinner"></div><h3>Chargement...</h3></div>';
+  container.innerHTML = '<div class="loading"><div class="spinner"></div><h3>Chargement...</h3><p style="margin-top:12px;color:var(--text3);">Récupération de centaines d\'AO IT depuis BOAMP</p></div>';
   
   try {
     let allResults = [];
     
-    // Si recherche utilisateur, une seule requête
     if (searchTerm) {
-      const params = new URLSearchParams({
-        dataset: 'boamp',
-        q: searchTerm,
-        rows: 1000,
-        sort: 'dateparution'
-      });
+      const params = new URLSearchParams({dataset: 'boamp', q: searchTerm, rows: 1000, sort: 'dateparution'});
       const response = await fetch(API_BASE + '?' + params);
       const data = await response.json();
       if (data.records) allResults = data.records;
     } else {
-      // SINON : Plusieurs requêtes ciblées IT (22 requêtes)
-      const queriesIT = [
-        // Logiciels & Applications
-        'logiciel',
-        'software OR progiciel',
-        'application OR plateforme',
-        
-        // Infrastructure & Cloud
-        'serveur OR cloud',
-        '"système information" OR "infrastructure informatique"',
-        'datacenter OR hébergement',
-        'virtualisation OR vmware',
-        
-        // Sécurité IT
-        'cybersécurité OR "sécurité informatique"',
-        'firewall OR "pare-feu"',
-        'antivirus OR sauvegarde OR backup',
-        
-        // Réseaux & Télécom IT
-        'réseau informatique OR switch OR routeur',
-        'wifi OR "borne wifi"',
-        'téléphonie IP OR VOIP OR IPBX',
-        
-        // Applications métier
-        'ERP OR CRM OR SIRH',
-        'GED OR dématérialisation',
-        'GMAO',
-        
-        // Data & Bases de données
-        '"base de données" OR SQL OR SGBD',
-        '"Business Intelligence" OR BI OR analytics',
-        
-        // Web & Digital
-        '"site web" OR "application web" OR portail',
-        'intranet OR extranet',
-        'développement OR programmation',
-        
-        // Matériel IT
-        'ordinateur OR "poste de travail" OR PC',
-        'imprimante réseau OR copieur réseau',
-        
-        // Services IT
-        'maintenance informatique OR support informatique',
-        'infogérance OR MCO',
-        
-        // Licences & Editeurs
-        'Microsoft OR Office OR Windows',
-        'Adobe OR licence'
-      ];
+      const queriesIT = ['logiciel','software OR progiciel','application OR plateforme','serveur OR cloud','"système information" OR "infrastructure informatique"','datacenter OR hébergement','virtualisation OR vmware','cybersécurité OR "sécurité informatique"','firewall OR "pare-feu"','antivirus OR sauvegarde OR backup','réseau informatique OR switch OR routeur','wifi OR "borne wifi"','téléphonie IP OR VOIP OR IPBX','ERP OR CRM OR SIRH','GED OR dématérialisation','GMAO','"base de données" OR SQL OR SGBD','"Business Intelligence" OR BI OR analytics','"site web" OR "application web" OR portail','intranet OR extranet','développement OR programmation','ordinateur OR "poste de travail" OR PC','imprimante réseau OR copieur réseau','maintenance informatique OR support informatique','infogérance OR MCO','Microsoft OR Office OR Windows','Adobe OR licence'];
       
-      console.log(`🔍 Lancement de ${queriesIT.length} requêtes BOAMP...`);
+      console.log(`🔍 ${queriesIT.length} requêtes BOAMP...`);
       
       for (let q of queriesIT) {
-        const params = new URLSearchParams({
-          dataset: 'boamp',
-          q: q,
-          rows: 200,
-          sort: 'dateparution'
-        });
+        const params = new URLSearchParams({dataset: 'boamp', q: q, rows: 200, sort: 'dateparution'});
         const response = await fetch(API_BASE + '?' + params);
         const data = await response.json();
-        if (data.records) {
-          allResults = allResults.concat(data.records);
-        }
+        if (data.records) allResults = allResults.concat(data.records);
       }
       
-      console.log(`✅ ${allResults.length} résultats bruts récupérés`);
+      console.log(`✅ ${allResults.length} résultats bruts`);
       
-      // Dédupliquer par ID
       const seen = new Set();
       allResults = allResults.filter(r => {
         const id = r.fields.idweb || r.recordid;
@@ -231,7 +156,7 @@ async function loadAO() {
         return true;
       });
       
-      console.log(`✅ ${allResults.length} résultats après déduplication`);
+      console.log(`✅ ${allResults.length} après déduplication`);
     }
     
     if (!allResults.length) {
@@ -239,29 +164,40 @@ async function loadAO() {
       return;
     }
     
-    // Transformer + FILTRER IT
-    allAO = allResults
-      .map(record => {
-        const f = record.fields;
-        return {
-          id: f.idweb || 'N/A',
-          title: f.objet || 'Sans titre',
-          client: f.denominationsociale || f.nomentite || 'Non spécifié',
-          budget: extractBudget(f),
-          deadline: f.datelimitereponse || 'N/A',
-          location: f.departement || 'France',
-          description: (f.descriptionlots || f.objetmarche || '').substring(0, 200),
-          url: f.urlannonce || `https://www.boamp.fr/avis/detail/${f.idweb}`,
-          source: 'BOAMP',
-          publishDate: f.dateparution || ''
-        };
-      })
-      .filter(ao => estIT(ao.title, ao.description));  // FILTRE IT !
+    allAO = allResults.map(record => {
+      const f = record.fields;
+      const dept = f.departement || '';
+      const commune = f.commune || '';
+      const region = REGIONS[dept] || '';
+      const deptName = DEPT_NAMES[dept] || '';
+      
+      const locParts = [];
+      if (region) locParts.push(region);
+      if (deptName) locParts.push(deptName);
+      else if (dept) locParts.push(dept);
+      if (commune) locParts.push(commune);
+      const location = locParts.length > 0 ? locParts.join(' · ') : 'Non spécifié';
+      
+      return {
+        id: f.idweb || 'N/A',
+        title: f.objet || 'Sans titre',
+        client: f.denominationsociale || f.nomentite || 'Non spécifié',
+        budget: extractBudget(f),
+        deadline: f.datelimitereponse || 'N/A',
+        location: location,
+        description: (f.descriptionlots || f.objetmarche || '').substring(0, 200),
+        url: f.urlannonce || `https://www.boamp.fr/avis/detail/${f.idweb}`,
+        source: 'BOAMP',
+        publishDate: f.dateparution || ''
+      };
+    }).filter(ao => estIT(ao.title, ao.description));
+    
+    console.log(`✅ ${allAO.length} AO IT après filtre`);
     
     displayed = 0;
     displayAO();
     updateStats(allAO.length);
-    toast(`✓ ${allAO.length} AO informatique trouvés`);
+    toast(`✓ ${allAO.length} AO informatique`);
     
   } catch (error) {
     console.error('Erreur:', error);
@@ -302,7 +238,7 @@ function displayAO() {
       <div class="ao-header">
         <div>
           <div class="ao-title">${ao.title}</div>
-          <div class="ao-client">📍 ${ao.client}</div>
+          <div class="ao-client">📍 ${ao.location}</div>
         </div>
         <div class="badge">📡 ${ao.source}</div>
       </div>
@@ -310,7 +246,7 @@ function displayAO() {
         <div class="meta-item"><div class="meta-label">RÉFÉRENCE</div><div class="meta-value">${ao.id}</div></div>
         <div class="meta-item"><div class="meta-label">BUDGET</div><div class="meta-value">${ao.budget > 0 ? fmt(ao.budget) : 'N/C'}</div></div>
         <div class="meta-item"><div class="meta-label">DEADLINE</div><div class="meta-value">${fmtD(ao.deadline)}</div></div>
-        <div class="meta-item"><div class="meta-label">LIEU</div><div class="meta-value">${ao.location}</div></div>
+        <div class="meta-item"><div class="meta-label">CLIENT</div><div class="meta-value">${ao.client}</div></div>
       </div>
       <div class="ao-desc">${ao.description || ''}</div>
       <a href="${ao.url}" target="_blank" class="ao-link">Voir l'annonce <span>→</span></a>
