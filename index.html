@@ -154,16 +154,57 @@ async function loadAO() {
       const data = await response.json();
       if (data.records) allResults = data.records;
     } else {
-      // SINON : Plusieurs requêtes ciblées IT
+      // SINON : Plusieurs requêtes ciblées IT (22 requêtes)
       const queriesIT = [
+        // Logiciels & Applications
         'logiciel',
+        'software OR progiciel',
+        'application OR plateforme',
+        
+        // Infrastructure & Cloud
         'serveur OR cloud',
         '"système information" OR "infrastructure informatique"',
+        'datacenter OR hébergement',
+        'virtualisation OR vmware',
+        
+        // Sécurité IT
         'cybersécurité OR "sécurité informatique"',
+        'firewall OR "pare-feu"',
+        'antivirus OR sauvegarde OR backup',
+        
+        // Réseaux & Télécom IT
+        'réseau informatique OR switch OR routeur',
+        'wifi OR "borne wifi"',
+        'téléphonie IP OR VOIP OR IPBX',
+        
+        // Applications métier
         'ERP OR CRM OR SIRH',
-        '"base de données" OR SQL',
-        '"site web" OR "application web"'
+        'GED OR dématérialisation',
+        'GMAO',
+        
+        // Data & Bases de données
+        '"base de données" OR SQL OR SGBD',
+        '"Business Intelligence" OR BI OR analytics',
+        
+        // Web & Digital
+        '"site web" OR "application web" OR portail',
+        'intranet OR extranet',
+        'développement OR programmation',
+        
+        // Matériel IT
+        'ordinateur OR "poste de travail" OR PC',
+        'imprimante réseau OR copieur réseau',
+        
+        // Services IT
+        'maintenance informatique OR support informatique',
+        'infogérance OR MCO',
+        
+        // Licences & Editeurs
+        'Microsoft OR Office OR Windows',
+        'Adobe OR licence'
       ];
+      
+      console.log(`🔍 Lancement de ${queriesIT.length} requêtes BOAMP...`);
       
       for (let q of queriesIT) {
         const params = new URLSearchParams({
@@ -179,6 +220,8 @@ async function loadAO() {
         }
       }
       
+      console.log(`✅ ${allResults.length} résultats bruts récupérés`);
+      
       // Dédupliquer par ID
       const seen = new Set();
       allResults = allResults.filter(r => {
@@ -187,6 +230,8 @@ async function loadAO() {
         seen.add(id);
         return true;
       });
+      
+      console.log(`✅ ${allResults.length} résultats après déduplication`);
     }
     
     if (!allResults.length) {
