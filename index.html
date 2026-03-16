@@ -238,7 +238,7 @@ function displayAO() {
       <div class="ao-header">
         <div>
           <div class="ao-title">${ao.title}</div>
-          <div class="ao-client">📍 ${ao.location}</div>
+          <div class="ao-client">🏢 ${ao.client}</div>
         </div>
         <div class="badge">📡 ${ao.source}</div>
       </div>
@@ -246,7 +246,7 @@ function displayAO() {
         <div class="meta-item"><div class="meta-label">RÉFÉRENCE</div><div class="meta-value">${ao.id}</div></div>
         <div class="meta-item"><div class="meta-label">BUDGET</div><div class="meta-value">${ao.budget > 0 ? fmt(ao.budget) : 'N/C'}</div></div>
         <div class="meta-item"><div class="meta-label">DEADLINE</div><div class="meta-value">${fmtD(ao.deadline)}</div></div>
-        <div class="meta-item"><div class="meta-label">CLIENT</div><div class="meta-value">${ao.client}</div></div>
+        <div class="meta-item"><div class="meta-label">LOCALISATION</div><div class="meta-value">${ao.location}</div></div>
       </div>
       <div class="ao-desc">${ao.description || ''}</div>
       <a href="${ao.url}" target="_blank" class="ao-link">Voir l'annonce <span>→</span></a>
