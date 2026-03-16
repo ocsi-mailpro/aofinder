@@ -140,15 +140,15 @@ async function loadAO() {
   container.innerHTML = '<div class="loading"><div class="spinner"></div><h3>Chargement...</h3></div>';
   
   try {
-    let query = 'informatique OR logiciel OR cloud OR serveur OR réseau';
+    // Recherche DANS LE TITRE avec des mots IT précis
+    let query = 'logiciel OR software OR serveur OR "système information" OR cloud OR "infrastructure informatique" OR réseau OR cybersécurité OR ERP OR CRM OR "base de données"';
     if (searchTerm) query = searchTerm;
     
     const params = new URLSearchParams({
       dataset: 'boamp',
-      q: query,
+      'q.objet': query,  // Cherche QUE dans le champ "objet" (titre)
       rows: 1000,
-      sort: 'dateparution',
-      facet: ['famillecpv', 'departement']
+      sort: 'dateparution'
     });
     
     const response = await fetch(API_BASE + '?' + params);
