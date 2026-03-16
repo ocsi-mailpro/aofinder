@@ -188,28 +188,54 @@ async function loadAO() {
       
       // === ÉTAPE 1: BLACKLIST ABSOLUE (exclut immédiatement) ===
       const blacklist = [
+        // IMPRESSION & PAPIER
+        'impression papier', 'routage courrier', 'impression offset', 'imprimerie',
+        'brochure', 'catalogue papier', 'flyer', 'dépliant', 'affiche papier',
+        'mise sous pli', 'façonnage', 'reliure', 'édition papier',
+        'reprographie', 'photocopie papier', 'duplication',
+        
+        // URBANISME & ENVIRONNEMENT  
         'urbanisme', 'géotechnique', 'pollution', 'diagnostic pollution', 'essai de sol',
+        'plan local urbanisme', 'plu', 'scot', 'étude environnement',
+        'étude impact', 'évaluation environnement',
+        
+        // BÂTIMENT & TRAVAUX
         'ascenseur', 'monte-charge', 'élévateur',
-        'nettoyage', 'propreté', 'entretien des locaux',
-        'restauration', 'repas', 'cantine', 'cuisine', 'alimentaire', 'denrées',
-        'gardiennage', 'surveillance', 'agent de sécurité',
-        'espaces verts', 'jardin', 'paysage', 'végétaux',
-        'déchets', 'ordures', 'collecte', 'tri',
         'bâtiment', 'construction', 'gros œuvre', 'second œuvre', 'travaux',
         'maçonnerie', 'charpente', 'couverture', 'toiture',
         'plomberie', 'sanitaire', 'chauffage', 'climatisation', 'ventilation', 'cvc',
         'électricité bâtiment', 'courant fort', 'tableau électrique',
         'menuiserie', 'serrurerie', 'vitrerie', 'fermeture',
         'peinture', 'revêtement', 'sol', 'carrelage', 'parquet',
+        
+        // SERVICES GÉNÉRAUX
+        'nettoyage', 'propreté', 'entretien des locaux',
+        'restauration', 'repas', 'cantine', 'cuisine', 'alimentaire', 'denrées',
+        'gardiennage', 'surveillance', 'agent de sécurité',
+        'espaces verts', 'jardin', 'paysage', 'végétaux', 'tonte',
+        'déchets', 'ordures', 'collecte', 'tri',
+        
+        // FOURNITURES NON IT
+        'fourniture de bureau', 'papeterie', 'consommable bureau',
+        'mobilier bureau', 'chaise', 'table', 'armoire',
+        'textile', 'vêtement', 'linge', 'blanchisserie',
+        
+        // TRANSPORT & LOGISTIQUE
         'transport', 'car', 'bus', 'véhicule', 'automobile',
+        'livraison marchandise', 'fret', 'messagerie colis',
+        
+        // INFRASTRUCTURE NON IT
         'assainissement', 'eau potable', 'eaux usées', 'fosse', 'bac à graisse', 'canalisation',
         'voirie', 'route', 'chaussée', 'enrobé', 'bitume',
-        'mobilier urbain', 'signalisation', 'éclairage public',
-        'textile', 'vêtement', 'linge', 'blanchisserie',
-        'fourniture de bureau', 'papeterie', 'consommable',
-        'impression papier', 'photocopie', 'reprographie',
+        'mobilier urbain', 'signalisation routière', 'éclairage public',
+        
+        // SERVICES FINANCIERS
         'énergie', 'gaz', 'électricité fourniture',
-        'assurance', 'mutuelle', 'banque'
+        'assurance', 'mutuelle', 'banque', 'crédit',
+        
+        // SANTÉ NON IT
+        'médical', 'soin', 'patient', 'hopital équipement', 'matériel médical',
+        'pharmacie', 'médicament', 'dispositif médical'
       ];
       
       for (let mot of blacklist) {
@@ -218,68 +244,115 @@ async function loadAO() {
         }
       }
       
-      // === ÉTAPE 2: WHITELIST IT (doit matcher au moins UN) ===
+      // === ÉTAPE 2: WHITELIST IT STRICTE (doit matcher au moins UN) ===
       const whitelistIT = [
-        // Logiciels
-        'logiciel', 'software', 'progiciel', 'suite logicielle', 'licence logiciel',
-        'microsoft', 'office 365', 'windows', 'adobe', 'autocad',
+        // === LOGICIELS & APPLICATIONS ===
+        'logiciel', 'software', 'progiciel', 'suite logicielle',
+        'licence logiciel', 'licence microsoft', 'licence adobe', 'licence oracle',
+        'office 365', 'microsoft 365', 'windows serveur',
+        'application métier', 'application web', 'application mobile',
+        'développement logiciel', 'développement application',
+        'progiciel gestion', 'solution logicielle',
         
-        // Infrastructure & Cloud
-        'serveur informatique', 'infrastructure informatique', 'datacenter', 'data center',
-        'cloud', 'saas', 'paas', 'iaas', 'azure', 'aws', 'google cloud', 'ovh',
-        'hébergement web', 'hébergement application',
-        'virtualisation', 'vmware', 'hyper-v',
+        // === INFRASTRUCTURE IT ===
+        'serveur informatique', 'serveur', 'infrastructure informatique',
+        'datacenter', 'data center', 'salle serveur',
+        'baie informatique', 'rack serveur',
+        'stockage informatique', 'san', 'nas',
+        'virtualisation', 'vmware', 'hyper-v', 'citrix',
         
-        // Réseau & Télécom IT
-        'réseau informatique', 'infrastructure réseau', 'équipement réseau',
-        'switch', 'routeur', 'firewall', 'wifi', 'borne wifi',
-        'téléphonie ip', 'voip', 'ipbx', 'visioconférence',
-        'fibre optique informatique', 'câblage informatique',
+        // === CLOUD & HÉBERGEMENT ===
+        'cloud computing', 'infrastructure cloud',
+        'saas', 'paas', 'iaas',
+        'azure', 'aws', 'google cloud', 'ovh cloud',
+        'hébergement web', 'hébergement applicatif',
+        'cloud hybride', 'cloud privé',
         
-        // Matériel informatique
-        'matériel informatique', 'parc informatique', 'équipement informatique',
-        'ordinateur', 'poste de travail', 'pc', 'laptop', 'portable informatique',
-        'tablette numérique', 'écran ordinateur', 'moniteur',
-        'imprimante réseau', 'scanner informatique', 'périphérique informatique',
+        // === RÉSEAU INFORMATIQUE ===
+        'réseau informatique', 'infrastructure réseau',
+        'équipement réseau informatique', 'switch réseau', 'commutateur réseau',
+        'routeur', 'firewall', 'pare-feu réseau',
+        'wifi entreprise', 'borne wifi', 'point accès wifi',
+        'câblage informatique', 'baie brassage',
+        'lan', 'wan', 'vpn',
         
-        // Sécurité IT
-        'cybersécurité', 'cyber-sécurité', 'sécurité informatique', 'sécurité si',
-        'antivirus', 'pare-feu informatique', 'sauvegarde informatique', 'backup',
-        'protection données', 'rgpd technique',
+        // === TÉLÉPHONIE IP ===
+        'téléphonie ip', 'voip', 'ipbx',
+        'téléphonie sur ip', 'standard téléphonique ip',
+        'visioconférence', 'solution visio',
         
-        // Développement & Applications
-        'développement logiciel', 'développement application', 'développement web',
-        'application métier', 'application mobile', 'app mobile',
-        'site web', 'site internet', 'portail web', 'plateforme web',
-        'api', 'interface applicative',
+        // === POSTES DE TRAVAIL ===
+        'poste de travail', 'parc informatique',
+        'ordinateur', 'pc fixe', 'pc portable',
+        'station travail', 'laptop', 'ultrabook',
+        'écran informatique', 'moniteur pc',
+        'clavier souris', 'périphérique informatique',
+        'tablette numérique tactile',
         
-        // Data & BI
-        'base de données', 'bdd', 'sgbd', 'sql', 'oracle database', 'mysql', 'postgresql',
-        'big data', 'data analytics', 'business intelligence', 'bi',
-        'entrepôt de données', 'datawarehouse',
+        // === IMPRESSION RÉSEAU (attention, pas imprimerie !) ===
+        'imprimante réseau', 'imprimante multifonction réseau',
+        'copieur réseau', 'scanner réseau',
+        'solution impression réseau', 'serveur impression',
         
-        // SI & Gestion
-        'système d\'information', 'système information', 'si',
-        'erp', 'sap', 'peoplesoft',
-        'crm', 'salesforce',
-        'sirh', 'gestion rh informatisée',
+        // === SÉCURITÉ IT ===
+        'cybersécurité', 'cyber-sécurité', 'sécurité informatique',
+        'sécurité système information', 'soc',
+        'antivirus', 'anti-virus', 'edr',
+        'pare-feu applicatif', 'waf',
+        'sauvegarde informatique', 'backup', 'plan reprise activité informatique',
+        'protection données informatique',
+        'pentest', 'audit sécurité informatique',
+        
+        // === SYSTÈMES & BASES DE DONNÉES ===
+        'système d\'information', 'système information', 'schéma directeur si',
+        'base de données', 'sgbd', 'serveur bdd',
+        'sql server', 'oracle database', 'mysql', 'postgresql', 'mongodb',
+        'data warehouse', 'entrepôt données',
+        
+        // === APPLICATIONS MÉTIER ===
+        'erp', 'progiciel gestion intégré',
+        'sap', 'oracle erp', 'sage',
+        'crm', 'gestion relation client',
+        'salesforce', 'microsoft dynamics',
+        'sirh', 'système information rh',
         'ged électronique', 'gestion documentaire électronique',
-        'gmao informatique',
+        'signature électronique', 'parapheur électronique',
+        'gmao informatisée',
         
-        // Services IT
-        'maintenance informatique', 'support informatique', 'assistance informatique',
-        'infogérance', 'infogérance informatique', 'externalisation it',
+        // === WEB & DIGITAL ===
+        'site web', 'site internet', 'portail web',
+        'plateforme web', 'plateforme numérique',
+        'cms', 'wordpress', 'drupal',
+        'e-commerce', 'boutique en ligne',
+        'intranet', 'extranet',
+        
+        // === DATA & BI ===
+        'business intelligence', 'décisionnel',
+        'power bi', 'tableau', 'qlik',
+        'big data', 'data analytics', 'data science',
+        'data lake', 'plateforme données',
+        
+        // === SERVICES IT ===
+        'maintenance informatique', 'support informatique',
+        'infogérance informatique', 'mcо informatique',
         'tierce maintenance applicative', 'tma',
-        'intégration système', 'migration informatique',
+        'assistance maîtrise ouvrage informatique', 'amoa si',
+        'intégration système', 'intégrateur informatique',
+        'migration informatique', 'migration système',
+        'externalisation informatique',
         
-        // Innovation IT
-        'intelligence artificielle', 'machine learning', 'ia',
-        'iot', 'internet des objets connectés',
+        // === INNOVATION IT ===
+        'intelligence artificielle', 'ia',
+        'machine learning', 'deep learning',
+        'iot informatique', 'objets connectés plateforme',
         'blockchain', 'smart contract',
+        'devops', 'ci/cd',
         
-        // Divers IT
-        'dématérialisation', 'numérisation document', 'archivage électronique',
-        'signature électronique', 'certificat électronique'
+        // === TRANSFORMATION NUMÉRIQUE ===
+        'transformation numérique', 'transformation digitale',
+        'dématérialisation processus', 'workflow électronique',
+        'numérisation documents archivage électronique',
+        'portail dématérialisation'
       ];
       
       // Cherche dans le TITRE en priorité
