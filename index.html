@@ -314,13 +314,25 @@ async function loadAO() {
         'numérique','informatique'
       ];
 
-      console.log(`🔍 ${queriesIT.length} requêtes BOAMP...`);
+      console.log(`🔍 ${queriesIT.length} requêtes BOAMP en parallèle...`);
 
-      for (let q of queriesIT) {
-        const params = new URLSearchParams({dataset: 'boamp', q: q, rows: 200, sort: 'dateparution'});
-        const response = await fetch(API_BASE + '?' + params);
-        const data = await response.json();
-        if (data.records) allResults = allResults.concat(data.records);
+      // PERF: batch de 10 en parallèle = 10x plus rapide
+      const BATCH_SIZE = 10;
+      for (let i = 0; i < queriesIT.length; i += BATCH_SIZE) {
+        const batch = queriesIT.slice(i, i + BATCH_SIZE);
+        const batchResults = await Promise.all(
+          batch.map(async q => {
+            try {
+              const params = new URLSearchParams({dataset: 'boamp', q: q, rows: 200, sort: 'dateparution'});
+              const res = await fetch(API_BASE + '?' + params);
+              const data = await res.json();
+              return data.records || [];
+            } catch { return []; }
+          })
+        );
+        batchResults.forEach(records => allResults = allResults.concat(records));
+        const progress = Math.min(i + BATCH_SIZE, queriesIT.length);
+        container.innerHTML = `<div class="loading"><div class="spinner"></div><h3>Chargement...</h3><p style="margin-top:12px;color:var(--text3);">Requêtes BOAMP : ${progress} / ${queriesIT.length}</p></div>`;
       }
 
       console.log(`✅ ${allResults.length} résultats bruts`);
