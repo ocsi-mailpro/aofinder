@@ -61,33 +61,41 @@ select option { background: #1a1a1a; color: var(--text); padding: 10px; }
 .load-more { text-align: center; padding: 40px; }
 .load-more .btn { background: var(--accent); color: white; }
 .load-more .btn:hover { background: #0077ed; }
+/* FIX: loading overlay pour bloquer les interactions pendant le chargement */
+.loading-overlay { position: fixed; inset: 0; z-index: 500; pointer-events: all; }
+.loading-overlay.hidden { display: none; }
 @media (max-width: 768px) { .hero h1 { font-size: 48px; } .hero p { font-size: 20px; } .container { padding: 0 20px; } .filters { padding: 24px; } .filter-grid { grid-template-columns: 1fr; } .ao-header { flex-direction: column; } .stat-value { font-size: 36px; } }
 </style>
 </head>
 <body>
 <div class="bg-gradient"></div>
+
+<!-- FIX: overlay invisible pour bloquer interactions pendant chargement -->
+<div class="loading-overlay hidden" id="overlay"></div>
+
 <div class="hero">
-<h1>AOFinder</h1>
-<p>Appels d'offres informatique</p>
-<div class="sources-badge"><div class="live"></div><span>API BOAMP Officielle</span></div>
+  <h1>AOFinder</h1>
+  <p>Appels d'offres informatique</p>
+  <div class="sources-badge"><div class="live"></div><span>API BOAMP Officielle</span></div>
 </div>
 <div class="container">
-<div class="filters">
-<div class="filter-grid">
-<div class="filter-group"><label>Recherche</label><input type="text" id="search" placeholder="Ex: cloud, cybersécurité..." oninput="debounceSearch()"></div>
-<div class="filter-group"><label>Budget minimum (€)</label><input type="number" id="min" placeholder="Ex: 50 000 €" oninput="debounceSearch()"></div>
-<div class="filter-group"><label>Budget maximum (€)</label><input type="number" id="max" placeholder="Ex: 500 000 €" oninput="debounceSearch()"></div>
-</div>
-<button class="btn" onclick="reset()">Réinitialiser</button>
-</div>
-<div class="stats">
-<div class="stat-card"><div class="stat-value" id="tot">-</div><div class="stat-label">Appels d'offres IT</div></div>
-<div class="stat-card"><div class="stat-value" id="bud">0 €</div><div class="stat-label">Budget cumulé</div></div>
-<div class="stat-card"><div class="stat-value" id="rec">-</div><div class="stat-label">MAJ</div></div>
-</div>
-<div id="res"></div>
+  <div class="filters">
+    <div class="filter-grid">
+      <div class="filter-group"><label>Recherche</label><input type="text" id="search" placeholder="Ex: cloud, cybersécurité..." oninput="debounceSearch()"></div>
+      <div class="filter-group"><label>Budget minimum (€)</label><input type="number" id="min" placeholder="Ex: 50 000 €" oninput="debounceSearch()"></div>
+      <div class="filter-group"><label>Budget maximum (€)</label><input type="number" id="max" placeholder="Ex: 500 000 €" oninput="debounceSearch()"></div>
+    </div>
+    <button class="btn" onclick="reset()">Réinitialiser</button>
+  </div>
+  <div class="stats">
+    <div class="stat-card"><div class="stat-value" id="tot">-</div><div class="stat-label">Appels d'offres IT</div></div>
+    <div class="stat-card"><div class="stat-value" id="bud">0 €</div><div class="stat-label">Budget cumulé</div></div>
+    <div class="stat-card"><div class="stat-value" id="rec">-</div><div class="stat-label">MAJ</div></div>
+  </div>
+  <div id="res"></div>
 </div>
 <div class="toast" id="toast"></div>
+
 <script>
 const API_BASE = 'https://boamp-datadila.opendatasoft.com/api/records/1.0/search/';
 let allAO = [];
@@ -95,27 +103,43 @@ let displayed = 0;
 const PER_PAGE = 50;
 let searchTimeout;
 
-// Départements → Régions et noms
+// FIX: flag pour bloquer les appels concurrents (race condition)
+let isLoading = false;
+
 const REGIONS = {'75':'Île-de-France','77':'Île-de-France','78':'Île-de-France','91':'Île-de-France','92':'Île-de-France','93':'Île-de-France','94':'Île-de-France','95':'Île-de-France','67':'Grand Est','68':'Grand Est','54':'Grand Est','57':'Grand Est','51':'Grand Est','08':'Grand Est','10':'Grand Est','52':'Grand Est','55':'Grand Est','88':'Grand Est','69':'Auvergne-Rhône-Alpes','01':'Auvergne-Rhône-Alpes','03':'Auvergne-Rhône-Alpes','07':'Auvergne-Rhône-Alpes','15':'Auvergne-Rhône-Alpes','26':'Auvergne-Rhône-Alpes','38':'Auvergne-Rhône-Alpes','42':'Auvergne-Rhône-Alpes','43':'Auvergne-Rhône-Alpes','63':'Auvergne-Rhône-Alpes','73':'Auvergne-Rhône-Alpes','74':'Auvergne-Rhône-Alpes','13':'PACA','06':'PACA','83':'PACA','84':'PACA','04':'PACA','05':'PACA','31':'Occitanie','34':'Occitanie','30':'Occitanie','11':'Occitanie','66':'Occitanie','09':'Occitanie','12':'Occitanie','32':'Occitanie','46':'Occitanie','48':'Occitanie','65':'Occitanie','81':'Occitanie','82':'Occitanie','33':'Nouvelle-Aquitaine','24':'Nouvelle-Aquitaine','40':'Nouvelle-Aquitaine','47':'Nouvelle-Aquitaine','64':'Nouvelle-Aquitaine','16':'Nouvelle-Aquitaine','17':'Nouvelle-Aquitaine','19':'Nouvelle-Aquitaine','23':'Nouvelle-Aquitaine','79':'Nouvelle-Aquitaine','86':'Nouvelle-Aquitaine','87':'Nouvelle-Aquitaine','59':'Hauts-de-France','62':'Hauts-de-France','02':'Hauts-de-France','60':'Hauts-de-France','80':'Hauts-de-France','44':'Pays de la Loire','49':'Pays de la Loire','53':'Pays de la Loire','72':'Pays de la Loire','85':'Pays de la Loire','35':'Bretagne','22':'Bretagne','29':'Bretagne','56':'Bretagne','76':'Normandie','14':'Normandie','27':'Normandie','50':'Normandie','61':'Normandie'};
 
 const DEPT_NAMES = {'01':'Ain','02':'Aisne','03':'Allier','04':'Alpes-de-Haute-Provence','05':'Hautes-Alpes','06':'Alpes-Maritimes','07':'Ardèche','08':'Ardennes','09':'Ariège','10':'Aube','11':'Aude','12':'Aveyron','13':'Bouches-du-Rhône','14':'Calvados','15':'Cantal','16':'Charente','17':'Charente-Maritime','18':'Cher','19':'Corrèze','21':'Côte-d\'Or','22':'Côtes-d\'Armor','23':'Creuse','24':'Dordogne','25':'Doubs','26':'Drôme','27':'Eure','28':'Eure-et-Loir','29':'Finistère','30':'Gard','31':'Haute-Garonne','32':'Gers','33':'Gironde','34':'Hérault','35':'Ille-et-Vilaine','36':'Indre','37':'Indre-et-Loire','38':'Isère','39':'Jura','40':'Landes','41':'Loir-et-Cher','42':'Loire','43':'Haute-Loire','44':'Loire-Atlantique','45':'Loiret','46':'Lot','47':'Lot-et-Garonne','48':'Lozère','49':'Maine-et-Loire','50':'Manche','51':'Marne','52':'Haute-Marne','53':'Mayenne','54':'Meurthe-et-Moselle','55':'Meuse','56':'Morbihan','57':'Moselle','58':'Nièvre','59':'Nord','60':'Oise','61':'Orne','62':'Pas-de-Calais','63':'Puy-de-Dôme','64':'Pyrénées-Atlantiques','65':'Hautes-Pyrénées','66':'Pyrénées-Orientales','67':'Bas-Rhin','68':'Haut-Rhin','69':'Rhône','70':'Haute-Saône','71':'Saône-et-Loire','72':'Sarthe','73':'Savoie','74':'Haute-Savoie','75':'Paris','76':'Seine-Maritime','77':'Seine-et-Marne','78':'Yvelines','79':'Deux-Sèvres','80':'Somme','81':'Tarn','82':'Tarn-et-Garonne','83':'Var','84':'Vaucluse','85':'Vendée','86':'Vienne','87':'Haute-Vienne','88':'Vosges','89':'Yonne','90':'Territoire de Belfort','91':'Essonne','92':'Hauts-de-Seine','93':'Seine-Saint-Denis','94':'Val-de-Marne','95':'Val-d\'Oise','971':'Guadeloupe','972':'Martinique','973':'Guyane','974':'La Réunion','976':'Mayotte'};
 
-// FILTRE IT STRICT
+const DOMTOM = {'971':'Guadeloupe','972':'Martinique','973':'Guyane','974':'La Réunion','976':'Mayotte'};
+
 function estIT(titre, desc) {
-  const t = titre.toLowerCase();
-  const d = desc.toLowerCase();
-  
-  const exclu = ['urbanisme','géotechnique','pollution','essai de sol','plu','plan local','impression papier','imprimerie','routage courrier','brochure papier','flyer','catalogue papier','ascenseur','monte-charge','nettoyage','propreté','restauration','repas','cantine','gardiennage','surveillance','espaces verts','jardin','déchets','ordures','bâtiment','construction','travaux','maçonnerie','plomberie','chauffage','climatisation','menuiserie','peinture','carrelage','transport','véhicule','car','bus','assainissement','eau potable','eaux usées','bac à graisse','voirie','route'];
-  
+  const t = (titre || '').toLowerCase();
+  const d = (desc || '').toLowerCase();
+
+  const exclu = [
+    'urbanisme','géotechnique','pollution','essai de sol','plu','plan local',
+    'impression papier','imprimerie','routage courrier','brochure papier','flyer','catalogue papier',
+    'mise sous pli','reprographie',
+    'ascenseur','monte-charge','nettoyage','propreté',
+    'restauration','repas','cantine','alimentaire','denrée',
+    'gardiennage','surveillance','espaces verts','jardin',
+    'déchets','ordures','bac à graisse','assainissement','eaux usées','eaux pluviales',
+    'bâtiment','construction','travaux','maçonnerie','plomberie','chauffage',
+    'climatisation','menuiserie','peinture','carrelage',
+    'transport','véhicule','car scolaire','bus',
+    'voirie','route','signalisation','aménagement urbain',
+    'géotechnique','diagnostic sol','étude géologique',
+    'mobilité verticale','ascenseur','monte-charge',
+    'microbiologique','analyses bactériologiques',
+    'fourniture papier','fourniture bureau non informatique'
+  ];
+
   for (let mot of exclu) {
     if (t.includes(mot) || d.includes(mot)) return false;
   }
-  
-  // WHITELIST IT élargie avec besoins OCSI
+
   const it = [
-    // Logiciels & Apps
-    'logiciel','software','progiciel','application','plateforme web','solution logicielle',
-    // IBM i (OCSI)
+    // IBM i (OCSI priorité)
     'ibmi','as/400','as400','rpg','cobol','iseries','db2 400',
     // Langages OCSI
     'java','j2ee','spring','hibernate','.net','c#','asp.net','dotnet',
@@ -128,39 +152,52 @@ function estIT(titre, desc) {
     // Développement web
     'site web','application web','portail web','développement web','react','angular','vue.js','node.js',
     // Data & BI OCSI
-    'base de données','sql','oracle','mysql','postgresql','data','big data','business intelligence','bi','analytics','data engineer',
+    'base de données','sql','oracle','mysql','postgresql','data engineer','big data',
+    'business intelligence','analytics',
     // Réseau & Télécom
     'réseau informatique','switch','routeur','wifi','firewall','téléphonie ip','voip',
     // Sécurité
-    'cybersécurité','cyber','sécurité informatique','antivirus','pare-feu','sauvegarde informatique','backup',
+    'cybersécurité','cyber','sécurité informatique','antivirus','pare-feu',
+    'sauvegarde informatique','backup',
     // ERP & Métier
     'erp','crm','sirh','ged électronique','gmao','sap','salesforce','odoo',
     // Système
-    'système d\'information','système information','architecture si','schéma directeur',
+    'système d\'information','architecture si','schéma directeur',
     // Services IT
-    'maintenance informatique','support informatique','infogérance','tma','tierce maintenance','mco',
+    'maintenance informatique','support informatique','infogérance','tma',
+    'tierce maintenance','mco',
     // Matériel IT
     'poste de travail','ordinateur','matériel informatique','équipement informatique',
+    'imprimante réseau','copieur réseau',
+    // Licences
+    'microsoft','office 365','windows server','adobe','autocad',
     // Transformation digitale
-    'dématérialisation','signature électronique','archivage électronique','transformation digitale','numérique'
+    'dématérialisation','signature électronique','archivage électronique',
+    'transformation digitale','numérique','logiciel','software','progiciel','application','plateforme web','solution logicielle',
+    // Formation IT
+    'formation informatique','certification informatique'
   ];
-  
+
   for (let mot of it) {
     if (t.includes(mot)) return true;
   }
-  
+
   return false;
 }
 
 async function loadAO() {
-  const searchTerm = document.getElementById('search').value;
+  // FIX: empêche les appels concurrents (race condition)
+  if (isLoading) return;
+  isLoading = true;
+  document.getElementById('overlay').classList.remove('hidden');
+
   const container = document.getElementById('res');
-  
-  container.innerHTML = '<div class="loading"><div class="spinner"></div><h3>Chargement...</h3><p style="margin-top:12px;color:var(--text3);">Récupération de centaines d\'AO IT depuis BOAMP</p></div>';
-  
+  container.innerHTML = '<div class="loading"><div class="spinner"></div><h3>Chargement...</h3><p style="margin-top:12px;color:var(--text3);">Récupération des AO IT depuis BOAMP…</p></div>';
+
   try {
     let allResults = [];
-    
+    const searchTerm = document.getElementById('search').value.trim();
+
     if (searchTerm) {
       const params = new URLSearchParams({dataset: 'boamp', q: searchTerm, rows: 1000, sort: 'dateparution'});
       const response = await fetch(API_BASE + '?' + params);
@@ -170,63 +207,51 @@ async function loadAO() {
       const queriesIT = [
         // Logiciels & Applications
         'logiciel','software OR progiciel','application OR plateforme',
-        
         // IBM i / AS400 (OCSI prioritaire)
         'ibmi OR as400 OR "as/400"','rpg OR cobol OR iseries',
-        
         // Langages OCSI
         'java OR j2ee OR spring','dotnet OR ".net" OR "c#"','php OR symfony OR laravel','python OR django',
-        
         // Infrastructure & Cloud
         'serveur OR cloud','azure OR aws OR "google cloud"','"système information" OR "infrastructure informatique"',
         'datacenter OR hébergement','virtualisation OR vmware',
-        
         // DevOps OCSI
         'devops OR ci/cd','jenkins OR gitlab OR github','docker OR kubernetes','terraform OR ansible',
-        
         // Sécurité
         'cybersécurité OR "sécurité informatique"','firewall OR "pare-feu"','antivirus OR sauvegarde OR backup',
-        
         // Réseaux & Télécom
         'réseau informatique OR switch OR routeur','wifi OR "borne wifi"','téléphonie IP OR VOIP OR IPBX',
-        
         // Applications métier
         'ERP OR CRM OR SIRH','GED OR dématérialisation','GMAO OR "gestion maintenance"',
         'SAP OR salesforce OR odoo',
-        
         // Data & BI OCSI
         '"base de données" OR SQL OR SGBD','oracle OR mysql OR postgresql',
         '"Business Intelligence" OR BI OR analytics','big data OR "data engineer" OR "data analyst"',
-        
         // Web & Digital
         '"site web" OR "application web" OR portail','react OR angular OR vue','node.js OR nodejs',
         'intranet OR extranet','développement OR programmation',
-        
         // Matériel IT
         'ordinateur OR "poste de travail" OR PC','imprimante réseau OR copieur réseau',
-        
         // Services IT
         'maintenance informatique OR support informatique','infogérance OR MCO OR TMA',
         'tierce maintenance OR "maintien condition opérationnelle"',
-        
         // Licences & Editeurs
         'Microsoft OR Office OR Windows','Adobe OR licence','linux OR open source',
-        
         // Formation IT
         'formation informatique OR "formation it"','certification OR "parcours formation"'
       ];
-      
+
       console.log(`🔍 ${queriesIT.length} requêtes BOAMP...`);
-      
+
       for (let q of queriesIT) {
         const params = new URLSearchParams({dataset: 'boamp', q: q, rows: 200, sort: 'dateparution'});
         const response = await fetch(API_BASE + '?' + params);
         const data = await response.json();
         if (data.records) allResults = allResults.concat(data.records);
       }
-      
+
       console.log(`✅ ${allResults.length} résultats bruts`);
-      
+
+      // Déduplication
       const seen = new Set();
       allResults = allResults.filter(r => {
         const id = r.fields.idweb || r.recordid;
@@ -234,100 +259,133 @@ async function loadAO() {
         seen.add(id);
         return true;
       });
-      
+
       console.log(`✅ ${allResults.length} après déduplication`);
     }
-    
+
     if (!allResults.length) {
-      toast('⚠️ Aucun résultat');
+      toast('⚠️ Aucun résultat BOAMP');
+      container.innerHTML = '<div class="loading"><h3>Aucun résultat</h3></div>';
       return;
     }
-    
+
     allAO = allResults.map(record => {
       const f = record.fields;
-      
-      // Tester TOUS les champs possibles pour localisation
-      const dept = f.departement || f.dept || f.code_departement || f.departements || '';
-      const commune = f.commune || f.ville || f.localite || f.lieu_execution || '';
-      const codeDept = dept.toString().padStart(dept.length < 3 ? 2 : 3, '0');
-      
-      const region = REGIONS[codeDept] || '';
-      const deptName = DEPT_NAMES[codeDept] || '';
-      
-      // Pour les DOM-TOM (971-976), afficher juste le nom du territoire + commune
-      const isDOMTOM = ['971','972','973','974','976'].includes(codeDept);
-      
-      const locParts = [];
-      if (isDOMTOM) {
-        // DOM-TOM : juste le nom (Guadeloupe, Martinique, etc.) + commune
-        if (deptName) locParts.push(deptName);
-        if (commune) locParts.push(commune);
-      } else {
-        // Métropole : Région · Département · Commune
-        if (region) locParts.push(region);
-        if (deptName) locParts.push(deptName);
-        else if (codeDept) locParts.push(codeDept);
-        if (commune) locParts.push(commune);
+
+      // Localisation : essai de tous les champs possibles
+      const dept = (f.departement || f.dept || f.code_departement || f.departements || '').toString().trim();
+      const commune = (f.commune || f.ville || f.localite || f.lieu_execution || '').toString().trim();
+
+      // Normalise le code département (toujours 2 ou 3 chiffres)
+      const codeDept = dept.length > 0 ? dept.padStart(dept.length <= 2 ? 2 : 3, '0') : '';
+
+      let location = 'France';
+      if (codeDept) {
+        if (DOMTOM[codeDept]) {
+          // DOM-TOM : nom du territoire + commune
+          const parts = [DOMTOM[codeDept]];
+          if (commune) parts.push(commune);
+          location = parts.join(' · ');
+        } else {
+          // Métropole : Région · Département · Commune
+          const parts = [];
+          if (REGIONS[codeDept]) parts.push(REGIONS[codeDept]);
+          if (DEPT_NAMES[codeDept]) parts.push(DEPT_NAMES[codeDept]);
+          else if (codeDept) parts.push(codeDept);
+          if (commune) parts.push(commune);
+          if (parts.length > 0) location = parts.join(' · ');
+        }
+      } else if (commune) {
+        location = commune;
       }
-      const location = locParts.length > 0 ? locParts.join(' · ') : 'France';
-      
+
+      // FIX: URL sécurisée — pas de "undefined" dans l'URL
+      const idweb = f.idweb;
+      const url = f.urlannonce || (idweb ? `https://www.boamp.fr/avis/detail/${idweb}` : null);
+
       return {
-        id: f.idweb || 'N/A',
+        id: idweb || 'N/A',
         title: f.objet || 'Sans titre',
         client: f.denominationsociale || f.nomentite || 'Non spécifié',
         budget: extractBudget(f),
         deadline: f.datelimitereponse || 'N/A',
         location: location,
         description: (f.descriptionlots || f.objetmarche || '').substring(0, 200),
-        url: f.urlannonce || `https://www.boamp.fr/avis/detail/${f.idweb}`,
+        url: url,
         source: 'BOAMP',
         publishDate: f.dateparution || ''
       };
     }).filter(ao => estIT(ao.title, ao.description));
-    
+
     console.log(`✅ ${allAO.length} AO IT après filtre`);
-    
+
+    // FIX: reset du compteur avant affichage
     displayed = 0;
     displayAO();
     updateStats(allAO.length);
     toast(`✓ ${allAO.length} AO informatique`);
-    
+
   } catch (error) {
-    console.error('Erreur:', error);
-    container.innerHTML = '<div class="loading"><h3>⚠️ Erreur</h3></div>';
-    toast('⚠️ Erreur');
+    console.error('Erreur BOAMP:', error);
+    container.innerHTML = '<div class="loading"><h3>⚠️ Erreur de connexion BOAMP</h3><p style="margin-top:12px;color:var(--text3);">Réessaye dans quelques secondes</p></div>';
+    toast('⚠️ Erreur de connexion');
+  } finally {
+    // FIX: toujours libérer le verrou même en cas d'erreur
+    isLoading = false;
+    document.getElementById('overlay').classList.add('hidden');
   }
 }
 
 function extractBudget(f) {
+  // FIX: gestion des valeurs décimales et des strings avec espaces
   const m = f.montant || f.valeurestimee || f.montantmarche || 0;
-  if (typeof m === 'string') return parseInt(m.replace(/[^0-9]/g, '')) || 0;
-  return parseInt(m) || 0;
+  if (typeof m === 'string') {
+    const cleaned = parseFloat(m.replace(/[^0-9.,]/g, '').replace(',', '.'));
+    return isNaN(cleaned) ? 0 : Math.round(cleaned);
+  }
+  return typeof m === 'number' ? Math.round(m) : 0;
 }
 
 function displayAO() {
   const container = document.getElementById('res');
-  const search = document.getElementById('search').value.toLowerCase();
+  const search = document.getElementById('search').value.toLowerCase().trim();
   const min = parseInt(document.getElementById('min').value) || 0;
   const max = parseInt(document.getElementById('max').value) || 999999999;
-  
-  let filtered = allAO.filter(ao => {
-    if (search && !ao.title.toLowerCase().includes(search) && !ao.description.toLowerCase().includes(search)) return false;
-    if (ao.budget < min || ao.budget > max) return false;
+
+  const filtered = allAO.filter(ao => {
+    if (search && !ao.title.toLowerCase().includes(search) && !ao.description.toLowerCase().includes(search) && !ao.client.toLowerCase().includes(search)) return false;
+    if (ao.budget > 0 && ao.budget < min) return false;
+    if (ao.budget > 0 && ao.budget > max) return false;
     return true;
   });
-  
-  const toShow = filtered.slice(0, displayed + PER_PAGE);
-  displayed += PER_PAGE;
-  
-  if (!toShow.length) {
-    container.innerHTML = '<div class="loading"><h3>Aucun AO trouvé</h3></div>';
+
+  if (!filtered.length) {
+    container.innerHTML = '<div class="loading"><h3>Aucun AO trouvé pour ces critères</h3></div>';
+    document.getElementById('tot').textContent = '0';
     return;
   }
-  
-  let html = '<div class="ao-list">';
+
+  // FIX: affiche uniquement la tranche courante (append, pas re-render total)
+  const start = displayed;
+  const end = Math.min(displayed + PER_PAGE, filtered.length);
+  const toShow = filtered.slice(start, end);
+  displayed = end;
+
+  // FIX: si premier chargement, crée la liste ; sinon ajoute en bas
+  let listEl = container.querySelector('.ao-list');
+  if (start === 0) {
+    container.innerHTML = '<div class="ao-list"></div>';
+    listEl = container.querySelector('.ao-list');
+  }
+
+  // Supprime l'ancien bouton "Charger plus" s'il existe
+  const oldLoadMore = container.querySelector('.load-more');
+  if (oldLoadMore) oldLoadMore.remove();
+
   toShow.forEach(ao => {
-    html += `<div class="ao-card">
+    const card = document.createElement('div');
+    card.className = 'ao-card';
+    card.innerHTML = `
       <div class="ao-header">
         <div>
           <div class="ao-title">${ao.title}</div>
@@ -339,19 +397,23 @@ function displayAO() {
         <div class="meta-item"><div class="meta-label">RÉFÉRENCE</div><div class="meta-value">${ao.id}</div></div>
         <div class="meta-item"><div class="meta-label">BUDGET</div><div class="meta-value">${ao.budget > 0 ? fmt(ao.budget) : 'N/C'}</div></div>
         <div class="meta-item"><div class="meta-label">DEADLINE</div><div class="meta-value">${fmtD(ao.deadline)}</div></div>
-        <div class="meta-item"><div class="meta-label">LOCALISATION</div><div class="meta-value">${ao.location}</div></div>
+        <div class="meta-item"><div class="meta-label">LOCALISATION</div><div class="meta-value">📍 ${ao.location}</div></div>
       </div>
-      <div class="ao-desc">${ao.description || ''}</div>
-      <a href="${ao.url}" target="_blank" class="ao-link">Voir l'annonce <span>→</span></a>
-    </div>`;
+      ${ao.description ? `<div class="ao-desc">${ao.description}</div>` : ''}
+      ${ao.url ? `<a href="${ao.url}" target="_blank" rel="noopener" class="ao-link">Voir l'annonce <span>→</span></a>` : '<span style="color:var(--text3);font-size:14px;">Lien non disponible</span>'}
+    `;
+    listEl.appendChild(card);
   });
-  html += '</div>';
-  
+
+  // Bouton "Charger plus" si il reste des résultats
   if (displayed < filtered.length) {
-    html += `<div class="load-more"><button class="btn" onclick="displayAO()">Charger plus (${filtered.length - displayed})</button></div>`;
+    const loadMoreDiv = document.createElement('div');
+    loadMoreDiv.className = 'load-more';
+    loadMoreDiv.innerHTML = `<button class="btn" onclick="displayAO()">Charger plus (${filtered.length - displayed} restants)</button>`;
+    container.appendChild(loadMoreDiv);
   }
-  
-  container.innerHTML = html;
+
+  // Met à jour le compteur filtré
   document.getElementById('tot').textContent = filtered.length.toLocaleString('fr-FR');
 }
 
@@ -365,15 +427,17 @@ function updateStats(total) {
 function debounceSearch() {
   clearTimeout(searchTimeout);
   searchTimeout = setTimeout(() => {
+    // FIX: reset du compteur avant de re-filtrer
     displayed = 0;
     displayAO();
-  }, 500);
+  }, 400);
 }
 
 function reset() {
   document.getElementById('search').value = '';
   document.getElementById('min').value = '';
   document.getElementById('max').value = '';
+  displayed = 0;
   loadAO();
 }
 
@@ -383,11 +447,7 @@ function fmt(n) {
 
 function fmtD(d) {
   if (!d || d === 'N/A') return 'N/A';
-  try {
-    return new Date(d).toLocaleDateString('fr-FR');
-  } catch {
-    return d;
-  }
+  try { return new Date(d).toLocaleDateString('fr-FR'); } catch { return d; }
 }
 
 function toast(m) {
