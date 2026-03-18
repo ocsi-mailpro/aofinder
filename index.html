@@ -111,7 +111,39 @@ function estIT(titre, desc) {
     if (t.includes(mot) || d.includes(mot)) return false;
   }
   
-  const it = ['logiciel','software','serveur','cloud','azure','aws','infrastructure informatique','parc informatique','système d\'information','réseau informatique','switch','routeur','wifi','firewall','téléphonie ip','voip','cybersécurité','cyber','antivirus','base de données','sql','oracle','mysql','erp','crm','sirh','ged électronique','site web','application web','portail web','développement','poste de travail','ordinateur','matériel informatique','virtualisation','vmware','sauvegarde informatique','backup','maintenance informatique','support informatique','infogérance','dématérialisation','signature électronique','archivage électronique'];
+  // WHITELIST IT élargie avec besoins OCSI
+  const it = [
+    // Logiciels & Apps
+    'logiciel','software','progiciel','application','plateforme web','solution logicielle',
+    // IBM i (OCSI)
+    'ibmi','as/400','as400','rpg','cobol','iseries','db2 400',
+    // Langages OCSI
+    'java','j2ee','spring','hibernate','.net','c#','asp.net','dotnet',
+    'php','symfony','laravel','python','django','flask',
+    // Cloud & Infrastructure
+    'serveur','cloud','azure','aws','google cloud','gcp','infrastructure informatique','parc informatique',
+    'datacenter','hébergement','virtualisation','vmware','hyper-v',
+    // DevOps OCSI
+    'devops','ci/cd','jenkins','gitlab','github','docker','kubernetes','terraform','ansible',
+    // Développement web
+    'site web','application web','portail web','développement web','react','angular','vue.js','node.js',
+    // Data & BI OCSI
+    'base de données','sql','oracle','mysql','postgresql','data','big data','business intelligence','bi','analytics','data engineer',
+    // Réseau & Télécom
+    'réseau informatique','switch','routeur','wifi','firewall','téléphonie ip','voip',
+    // Sécurité
+    'cybersécurité','cyber','sécurité informatique','antivirus','pare-feu','sauvegarde informatique','backup',
+    // ERP & Métier
+    'erp','crm','sirh','ged électronique','gmao','sap','salesforce','odoo',
+    // Système
+    'système d\'information','système information','architecture si','schéma directeur',
+    // Services IT
+    'maintenance informatique','support informatique','infogérance','tma','tierce maintenance','mco',
+    // Matériel IT
+    'poste de travail','ordinateur','matériel informatique','équipement informatique',
+    // Transformation digitale
+    'dématérialisation','signature électronique','archivage électronique','transformation digitale','numérique'
+  ];
   
   for (let mot of it) {
     if (t.includes(mot)) return true;
@@ -135,7 +167,54 @@ async function loadAO() {
       const data = await response.json();
       if (data.records) allResults = data.records;
     } else {
-      const queriesIT = ['logiciel','software OR progiciel','application OR plateforme','serveur OR cloud','"système information" OR "infrastructure informatique"','datacenter OR hébergement','virtualisation OR vmware','cybersécurité OR "sécurité informatique"','firewall OR "pare-feu"','antivirus OR sauvegarde OR backup','réseau informatique OR switch OR routeur','wifi OR "borne wifi"','téléphonie IP OR VOIP OR IPBX','ERP OR CRM OR SIRH','GED OR dématérialisation','GMAO','"base de données" OR SQL OR SGBD','"Business Intelligence" OR BI OR analytics','"site web" OR "application web" OR portail','intranet OR extranet','développement OR programmation','ordinateur OR "poste de travail" OR PC','imprimante réseau OR copieur réseau','maintenance informatique OR support informatique','infogérance OR MCO','Microsoft OR Office OR Windows','Adobe OR licence'];
+      const queriesIT = [
+        // Logiciels & Applications
+        'logiciel','software OR progiciel','application OR plateforme',
+        
+        // IBM i / AS400 (OCSI prioritaire)
+        'ibmi OR as400 OR "as/400"','rpg OR cobol OR iseries',
+        
+        // Langages OCSI
+        'java OR j2ee OR spring','dotnet OR ".net" OR "c#"','php OR symfony OR laravel','python OR django',
+        
+        // Infrastructure & Cloud
+        'serveur OR cloud','azure OR aws OR "google cloud"','"système information" OR "infrastructure informatique"',
+        'datacenter OR hébergement','virtualisation OR vmware',
+        
+        // DevOps OCSI
+        'devops OR ci/cd','jenkins OR gitlab OR github','docker OR kubernetes','terraform OR ansible',
+        
+        // Sécurité
+        'cybersécurité OR "sécurité informatique"','firewall OR "pare-feu"','antivirus OR sauvegarde OR backup',
+        
+        // Réseaux & Télécom
+        'réseau informatique OR switch OR routeur','wifi OR "borne wifi"','téléphonie IP OR VOIP OR IPBX',
+        
+        // Applications métier
+        'ERP OR CRM OR SIRH','GED OR dématérialisation','GMAO OR "gestion maintenance"',
+        'SAP OR salesforce OR odoo',
+        
+        // Data & BI OCSI
+        '"base de données" OR SQL OR SGBD','oracle OR mysql OR postgresql',
+        '"Business Intelligence" OR BI OR analytics','big data OR "data engineer" OR "data analyst"',
+        
+        // Web & Digital
+        '"site web" OR "application web" OR portail','react OR angular OR vue','node.js OR nodejs',
+        'intranet OR extranet','développement OR programmation',
+        
+        // Matériel IT
+        'ordinateur OR "poste de travail" OR PC','imprimante réseau OR copieur réseau',
+        
+        // Services IT
+        'maintenance informatique OR support informatique','infogérance OR MCO OR TMA',
+        'tierce maintenance OR "maintien condition opérationnelle"',
+        
+        // Licences & Editeurs
+        'Microsoft OR Office OR Windows','Adobe OR licence','linux OR open source',
+        
+        // Formation IT
+        'formation informatique OR "formation it"','certification OR "parcours formation"'
+      ];
       
       console.log(`🔍 ${queriesIT.length} requêtes BOAMP...`);
       
