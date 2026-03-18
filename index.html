@@ -245,18 +245,17 @@ async function loadAO() {
     
     allAO = allResults.map(record => {
       const f = record.fields;
-      const dept = f.departement || '';
-      const commune = f.commune || '';
-      const region = REGIONS[dept] || '';
-      const deptName = DEPT_NAMES[dept] || '';
       
-      // DEBUG: voir ce que BOAMP renvoie
-      if (!dept && !commune) {
-        console.log('Pas de localisation pour:', f.objet, '| Fields:', Object.keys(f));
-      }
+      // Tester TOUS les champs possibles pour localisation
+      const dept = f.departement || f.dept || f.code_departement || f.departements || '';
+      const commune = f.commune || f.ville || f.localite || f.lieu_execution || '';
+      const codeDept = dept.toString().padStart(dept.length < 3 ? 2 : 3, '0');
+      
+      const region = REGIONS[codeDept] || '';
+      const deptName = DEPT_NAMES[codeDept] || '';
       
       // Pour les DOM-TOM (971-976), afficher juste le nom du territoire + commune
-      const isDOMTOM = ['971','972','973','974','976'].includes(dept);
+      const isDOMTOM = ['971','972','973','974','976'].includes(codeDept);
       
       const locParts = [];
       if (isDOMTOM) {
@@ -267,10 +266,10 @@ async function loadAO() {
         // Métropole : Région · Département · Commune
         if (region) locParts.push(region);
         if (deptName) locParts.push(deptName);
-        else if (dept) locParts.push(dept);
+        else if (codeDept) locParts.push(codeDept);
         if (commune) locParts.push(commune);
       }
-      const location = locParts.length > 0 ? locParts.join(' · ') : 'Non spécifié';
+      const location = locParts.length > 0 ? locParts.join(' · ') : 'France';
       
       return {
         id: f.idweb || 'N/A',
