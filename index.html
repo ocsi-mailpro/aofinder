@@ -250,6 +250,11 @@ async function loadAO() {
       const region = REGIONS[dept] || '';
       const deptName = DEPT_NAMES[dept] || '';
       
+      // DEBUG: voir ce que BOAMP renvoie
+      if (!dept && !commune) {
+        console.log('Pas de localisation pour:', f.objet, '| Fields:', Object.keys(f));
+      }
+      
       // Pour les DOM-TOM (971-976), afficher juste le nom du territoire + commune
       const isDOMTOM = ['971','972','973','974','976'].includes(dept);
       
