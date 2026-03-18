@@ -83,6 +83,17 @@
   --toggle-text: #515154;
 }
 
+/* Light mode: cartes blanches avec ombre marquée */
+[data-theme="light"] .ao-card {
+  background: #ffffff;
+  border-color: rgba(0,0,0,0.1);
+  box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+}
+[data-theme="light"] .ao-card:hover {
+  box-shadow: 0 16px 40px rgba(0,0,0,0.14);
+  border-color: rgba(0,113,227,0.3);
+}
+
 body {
   font-family: -apple-system, BlinkMacSystemFont, 'Inter', sans-serif;
   background: var(--bg);
@@ -300,30 +311,38 @@ input[type="number"]::-webkit-outer-spin-button { display: none; }
 .stat-label { font-size: 14px; color: var(--text2); font-weight: 500; }
 
 /* ── AO CARDS ── */
-.ao-list { display: grid; gap: 24px; }
+.ao-list { display: grid; gap: 20px; }
+
+.ao-list { counter-reset: ao-counter; }
 
 .ao-card {
   background: var(--surface);
   backdrop-filter: blur(40px);
-  border: 1px solid var(--border);
+  border: 1px solid var(--border2);
   border-radius: 20px;
-  padding: 28px;
+  padding: 28px 28px 28px 36px;
   transition: all 0.4s;
   position: relative;
   overflow: hidden;
+  box-shadow: 0 2px 12px var(--shadow);
 }
+
+/* Barre colorée toujours visible à gauche */
 .ao-card::after {
   content: '';
   position: absolute;
   top: 0; left: 0;
-  width: 4px; height: 100%;
+  width: 5px; height: 100%;
   background: linear-gradient(180deg, var(--accent), var(--success));
-  opacity: 0;
+  opacity: 0.35;
   transition: opacity 0.3s;
+  border-radius: 20px 0 0 20px;
 }
+
 .ao-card:hover {
-  transform: translateX(8px) translateY(-4px);
-  box-shadow: 0 24px 48px var(--shadow);
+  transform: translateX(6px) translateY(-3px);
+  box-shadow: 0 20px 48px var(--shadow);
+  border-color: rgba(0,113,227,0.3);
 }
 .ao-card:hover::after { opacity: 1; }
 
