@@ -250,11 +250,21 @@ async function loadAO() {
       const region = REGIONS[dept] || '';
       const deptName = DEPT_NAMES[dept] || '';
       
+      // Pour les DOM-TOM (971-976), afficher juste le nom du territoire + commune
+      const isDOMTOM = ['971','972','973','974','976'].includes(dept);
+      
       const locParts = [];
-      if (region) locParts.push(region);
-      if (deptName) locParts.push(deptName);
-      else if (dept) locParts.push(dept);
-      if (commune) locParts.push(commune);
+      if (isDOMTOM) {
+        // DOM-TOM : juste le nom (Guadeloupe, Martinique, etc.) + commune
+        if (deptName) locParts.push(deptName);
+        if (commune) locParts.push(commune);
+      } else {
+        // Métropole : Région · Département · Commune
+        if (region) locParts.push(region);
+        if (deptName) locParts.push(deptName);
+        else if (dept) locParts.push(dept);
+        if (commune) locParts.push(commune);
+      }
       const location = locParts.length > 0 ? locParts.join(' · ') : 'Non spécifié';
       
       return {
