@@ -485,17 +485,17 @@ input[type="number"]::-webkit-outer-spin-button { display: none; }
 }
 
 .ao-desc-wrap {
-  display: grid;
-  grid-template-rows: 0fr;
-  transition: grid-template-rows 0.35s ease;
+  max-height: 0;
+  overflow: hidden;
+  transition: max-height 0.35s ease, margin-top 0.35s ease;
   margin-top: 0;
 }
 .ao-desc-wrap.open {
-  grid-template-rows: 1fr;
+  max-height: 600px;
   margin-top: 14px;
 }
 .ao-desc-inner {
-  overflow: hidden;
+  overflow: visible;
 }
 .ao-desc {
   color: var(--text2);
@@ -1024,7 +1024,7 @@ function displayAO() {
       const btn = document.createElement('button');
       btn.className = 'ao-toggle-btn';
       btn.id = 'btn-' + cardId;
-      btn.innerHTML = '<span class="arrow">▼</span> Objet du marché';
+      btn.innerHTML = '<span class="ao-arrow">▼</span> <span class="ao-label">Objet du marché</span>';
       btn.addEventListener('click', function() { toggleDesc(cardId); });
       footer.appendChild(btn);
     }
@@ -1109,14 +1109,13 @@ window.onload = () => loadAO();
 function toggleDesc(id) {
   const wrap = document.getElementById('wrap-' + id);
   const btn  = document.getElementById('btn-'  + id);
-  if (!wrap) return;
+  if (!wrap || !btn) return;
   const isOpen = wrap.classList.contains('open');
   wrap.classList.toggle('open', !isOpen);
-  btn.classList.toggle('open', !isOpen);
-  btn.querySelector('.arrow').style.transform = isOpen ? '' : 'rotate(180deg)';
-  // Update label
-  const label = btn.childNodes[1];
-  if (label) label.textContent = isOpen ? ' Objet du marché' : ' Masquer';
+  const arrow = btn.querySelector('.ao-arrow');
+  const label = btn.querySelector('.ao-label');
+  if (arrow) arrow.textContent = isOpen ? '▼' : '▲';
+  if (label) label.textContent = isOpen ? 'Objet du marché' : 'Masquer';
 }
 
 </script>
