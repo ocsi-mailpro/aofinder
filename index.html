@@ -272,7 +272,7 @@ input[type="number"]::-webkit-outer-spin-button { display: none; }
 /* ── STATS ── */
 .stats {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  grid-template-columns: repeat(2, 1fr);
   gap: 24px;
   margin-bottom: 48px;
   animation: fadeIn 0.8s ease 0.4s both;
@@ -607,14 +607,7 @@ input[type="number"]::-webkit-outer-spin-button { display: none; }
         <label>Recherche</label>
         <input type="text" id="search" placeholder="Ex: cloud, cybersécurité..." oninput="debounceSearch()">
       </div>
-      <div class="filter-group">
-        <label>Budget minimum (€)</label>
-        <input type="number" id="min" placeholder="Ex: 50 000 €" oninput="debounceSearch()">
-      </div>
-      <div class="filter-group">
-        <label>Budget maximum (€)</label>
-        <input type="number" id="max" placeholder="Ex: 500 000 €" oninput="debounceSearch()">
-      </div>
+
     </div>
     <button class="btn" onclick="reset()">Réinitialiser</button>
   </div>
@@ -622,7 +615,6 @@ input[type="number"]::-webkit-outer-spin-button { display: none; }
   <!-- STATS -->
   <div class="stats">
     <div class="stat-card"><div class="stat-value" id="tot">-</div><div class="stat-label">Appels d'offres IT</div></div>
-    <div class="stat-card"><div class="stat-value" id="bud">0 €</div><div class="stat-label">Budget cumulé</div></div>
     <div class="stat-card"><div class="stat-value" id="rec">-</div><div class="stat-label">MAJ</div></div>
   </div>
 
@@ -971,8 +963,8 @@ function extractBudget(f) {
 function displayAO() {
   const container = document.getElementById('res');
   const search = document.getElementById('search').value.toLowerCase().trim();
-  const min = parseInt(document.getElementById('min').value) || 0;
-  const max = parseInt(document.getElementById('max').value) || 999999999;
+  const min = 0;
+  const max = 999999999;
 
   const filtered = allAO.filter(ao => {
     if (search && !ao.title.toLowerCase().includes(search) && !ao.description.toLowerCase().includes(search) && !ao.client.toLowerCase().includes(search)) return false;
@@ -1008,31 +1000,59 @@ function displayAO() {
     const card = document.createElement('div');
     card.className = 'ao-card';
     const cardId = 'desc-' + Math.random().toString(36).slice(2,9);
-    card.innerHTML = `
-      <div class="ao-header">
-        <div>
-          <div class="ao-title">${ao.title}</div>
-          <div class="ao-client">🏢 ${ao.client}</div>
-        </div>
-        <div class="badge">📡 ${ao.source}</div>
-      </div>
-      <div class="ao-bubbles">
-        <div class="bubble bubble-ref"><span class="bubble-label">REF</span><span class="bubble-val">${ao.id}</span></div>
-        <div class="bubble bubble-budget"><span class="bubble-label">💰 BUDGET</span><span class="bubble-val">${ao.budget > 0 ? fmt(ao.budget) : 'N/C'}</span></div>
-        <div class="bubble bubble-deadline"><span class="bubble-label">📅 DEADLINE</span><span class="bubble-val">${fmtD(ao.deadline)}</span></div>
-        <div class="bubble bubble-location"><span class="bubble-label">📍 LIEU</span><span class="bubble-val">${ao.location}</span></div>
-      </div>
-      <div class="ao-footer">
-        ${ao.description ? `<button class="ao-toggle-btn" id="btn-${cardId}" onclick="toggleDesc('${cardId}')"><span class="arrow">▼</span> Description</button>` : ''}
-        ${ao.url ? `<a href="${ao.url}" target="_blank" rel="noopener" class="ao-link">Voir l'annonce →</a>` : '<span class="ao-no-link">Lien non disponible</span>'}
-      </div>
-      ${ao.description ? `
-      <div class="ao-desc-wrap" id="wrap-${cardId}">
-        <div class="ao-desc-inner">
-          <div class="ao-desc">${ao.description}</div>
-        </div>
-      </div>` : ''}
-    `;
+
+    // Header
+    const header = document.createElement('div');
+    header.className = 'ao-header';
+    header.innerHTML = '<div><div class="ao-title">' + ao.title + '</div><div class="ao-client">🏢 ' + ao.client + '</div></div><div class="badge">📡 ' + ao.source + '</div>';
+    card.appendChild(header);
+
+    // Bulles (sans budget)
+    const bubbles = document.createElement('div');
+    bubbles.className = 'ao-bubbles';
+    bubbles.innerHTML =
+      '<div class="bubble bubble-ref"><span class="bubble-label">REF</span><span class="bubble-val">' + ao.id + '</span></div>' +
+      '<div class="bubble bubble-deadline"><span class="bubble-label">📅 DEADLINE</span><span class="bubble-val">' + fmtD(ao.deadline) + '</span></div>' +
+      '<div class="bubble bubble-location"><span class="bubble-label">📍 LIEU</span><span class="bubble-val">' + ao.location + '</span></div>';
+    card.appendChild(bubbles);
+
+    // Footer (lien + bouton accordéon)
+    const footer = document.createElement('div');
+    footer.className = 'ao-footer';
+
+    if (ao.description) {
+      const btn = document.createElement('button');
+      btn.className = 'ao-toggle-btn';
+      btn.id = 'btn-' + cardId;
+      btn.innerHTML = '<span class="arrow">▼</span> Objet du marché';
+      btn.addEventListener('click', function() { toggleDesc(cardId); });
+      footer.appendChild(btn);
+    }
+
+    if (ao.url) {
+      const lien = document.createElement('a');
+      lien.href = ao.url;
+      lien.target = '_blank';
+      lien.rel = 'noopener';
+      lien.className = 'ao-link';
+      lien.textContent = "Voir l'annonce →";
+      footer.appendChild(lien);
+    } else {
+      const noLink = document.createElement('span');
+      noLink.className = 'ao-no-link';
+      noLink.textContent = 'Lien non disponible';
+      footer.appendChild(noLink);
+    }
+    card.appendChild(footer);
+
+    // Accordéon description
+    if (ao.description) {
+      const wrap = document.createElement('div');
+      wrap.className = 'ao-desc-wrap';
+      wrap.id = 'wrap-' + cardId;
+      wrap.innerHTML = '<div class="ao-desc-inner"><div class="ao-desc">' + ao.description + '</div></div>';
+      card.appendChild(wrap);
+    }
     listEl.appendChild(card);
   });
 
@@ -1050,8 +1070,6 @@ function displayAO() {
 
 function updateStats(total) {
   document.getElementById('tot').textContent = total.toLocaleString('fr-FR');
-  const totalBudget = allAO.reduce((sum, ao) => sum + ao.budget, 0);
-  document.getElementById('bud').textContent = fmt(totalBudget);
   document.getElementById('rec').textContent = new Date().toLocaleDateString('fr-FR');
 }
 
@@ -1066,8 +1084,6 @@ function debounceSearch() {
 
 function reset() {
   document.getElementById('search').value = '';
-  document.getElementById('min').value = '';
-  document.getElementById('max').value = '';
   displayed = 0;
   loadAO();
 }
@@ -1100,7 +1116,7 @@ function toggleDesc(id) {
   btn.querySelector('.arrow').style.transform = isOpen ? '' : 'rotate(180deg)';
   // Update label
   const label = btn.childNodes[1];
-  if (label) label.textContent = isOpen ? ' Description' : ' Masquer';
+  if (label) label.textContent = isOpen ? ' Objet du marché' : ' Masquer';
 }
 
 </script>
