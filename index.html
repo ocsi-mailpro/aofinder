@@ -439,12 +439,7 @@ input[type="number"]::-webkit-outer-spin-button { display: none; }
   color: var(--bubble-location-text);
 }
 
-.ao-desc {
-  color: var(--text2);
-  line-height: 1.6;
-  margin-bottom: 20px;
-  font-size: 15px;
-}
+/* ao-desc moved to accordion block */
 .ao-link {
   display: inline-flex;
   align-items: center;
@@ -457,6 +452,72 @@ input[type="number"]::-webkit-outer-spin-button { display: none; }
 }
 .ao-link:hover { gap: 12px; }
 .ao-no-link { color: var(--text3); font-size: 14px; }
+
+/* ── ACCORDÉON DESCRIPTION ── */
+.ao-toggle-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  margin-bottom: 0;
+  padding: 6px 14px;
+  border-radius: 100px;
+  border: 1px solid var(--border2);
+  background: var(--surface);
+  color: var(--text2);
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+  font-family: inherit;
+}
+.ao-toggle-btn:hover {
+  background: var(--surface-hover);
+  color: var(--text);
+  border-color: var(--accent);
+}
+.ao-toggle-btn .arrow {
+  font-size: 11px;
+  transition: transform 0.3s ease;
+  display: inline-block;
+}
+.ao-toggle-btn.open .arrow {
+  transform: rotate(180deg);
+}
+
+.ao-desc-wrap {
+  display: grid;
+  grid-template-rows: 0fr;
+  transition: grid-template-rows 0.35s ease;
+  margin-top: 0;
+}
+.ao-desc-wrap.open {
+  grid-template-rows: 1fr;
+  margin-top: 14px;
+}
+.ao-desc-inner {
+  overflow: hidden;
+}
+.ao-desc {
+  color: var(--text2);
+  line-height: 1.7;
+  font-size: 14px;
+  padding: 14px 16px;
+  background: rgba(0,113,227,0.04);
+  border-left: 3px solid var(--accent);
+  border-radius: 0 8px 8px 0;
+}
+[data-theme="light"] .ao-desc {
+  background: rgba(0,113,227,0.04);
+}
+
+.ao-footer {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-top: 18px;
+  flex-wrap: wrap;
+}
+
 
 /* ── LOADING ── */
 .loading { text-align: center; padding: 100px 40px; }
@@ -946,6 +1007,7 @@ function displayAO() {
   toShow.forEach(ao => {
     const card = document.createElement('div');
     card.className = 'ao-card';
+    const cardId = 'desc-' + Math.random().toString(36).slice(2,9);
     card.innerHTML = `
       <div class="ao-header">
         <div>
@@ -960,8 +1022,16 @@ function displayAO() {
         <div class="bubble bubble-deadline"><span class="bubble-label">📅 DEADLINE</span><span class="bubble-val">${fmtD(ao.deadline)}</span></div>
         <div class="bubble bubble-location"><span class="bubble-label">📍 LIEU</span><span class="bubble-val">${ao.location}</span></div>
       </div>
-      ${ao.description ? `<div class="ao-desc">${ao.description}</div>` : ''}
-      ${ao.url ? `<a href="${ao.url}" target="_blank" rel="noopener" class="ao-link">Voir l'annonce <span>→</span></a>` : '<span class="ao-no-link">Lien non disponible</span>'}
+      <div class="ao-footer">
+        ${ao.description ? `<button class="ao-toggle-btn" id="btn-${cardId}" onclick="toggleDesc('${cardId}')"><span class="arrow">▼</span> Description</button>` : ''}
+        ${ao.url ? `<a href="${ao.url}" target="_blank" rel="noopener" class="ao-link">Voir l'annonce →</a>` : '<span class="ao-no-link">Lien non disponible</span>'}
+      </div>
+      ${ao.description ? `
+      <div class="ao-desc-wrap" id="wrap-${cardId}">
+        <div class="ao-desc-inner">
+          <div class="ao-desc">${ao.description}</div>
+        </div>
+      </div>` : ''}
     `;
     listEl.appendChild(card);
   });
@@ -1019,6 +1089,20 @@ function toast(m) {
 }
 
 window.onload = () => loadAO();
+
+function toggleDesc(id) {
+  const wrap = document.getElementById('wrap-' + id);
+  const btn  = document.getElementById('btn-'  + id);
+  if (!wrap) return;
+  const isOpen = wrap.classList.contains('open');
+  wrap.classList.toggle('open', !isOpen);
+  btn.classList.toggle('open', !isOpen);
+  btn.querySelector('.arrow').style.transform = isOpen ? '' : 'rotate(180deg)';
+  // Update label
+  const label = btn.childNodes[1];
+  if (label) label.textContent = isOpen ? ' Description' : ' Masquer';
+}
+
 </script>
 
 
