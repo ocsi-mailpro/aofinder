@@ -599,8 +599,6 @@ input[type="number"]::-webkit-outer-spin-button { display: none; }
   display: none;
 }
 .loading-overlay.hidden { display: none; }
-.is-loading input,
-.is-loading button { pointer-events: none; opacity: 0.5; }
 
 @media (max-width: 768px) {
   .hero h1 { font-size: 48px; }
@@ -619,6 +617,7 @@ input[type="number"]::-webkit-outer-spin-button { display: none; }
 <body>
 
 <div class="bg-gradient"></div>
+<div class="loading-overlay hidden" id="overlay"></div>
 <!-- TOGGLE THÈME -->
 <button class="theme-toggle" onclick="toggleTheme()" id="themeBtn">
   <span class="icon" id="themeIcon">☀️</span>
@@ -670,8 +669,7 @@ let searchTimeout;
 
 // FIX: flag pour bloquer les appels concurrents (race condition)
 let isLoading = false;
-    document.body.classList.remove('is-loading');
-    document.getElementById('overlay').style.display = 'none';
+    document.getElementById('overlay').classList.add('hidden');
 
 const REGIONS = {'75':'Île-de-France','77':'Île-de-France','78':'Île-de-France','91':'Île-de-France','92':'Île-de-France','93':'Île-de-France','94':'Île-de-France','95':'Île-de-France','67':'Grand Est','68':'Grand Est','54':'Grand Est','57':'Grand Est','51':'Grand Est','08':'Grand Est','10':'Grand Est','52':'Grand Est','55':'Grand Est','88':'Grand Est','69':'Auvergne-Rhône-Alpes','01':'Auvergne-Rhône-Alpes','03':'Auvergne-Rhône-Alpes','07':'Auvergne-Rhône-Alpes','15':'Auvergne-Rhône-Alpes','26':'Auvergne-Rhône-Alpes','38':'Auvergne-Rhône-Alpes','42':'Auvergne-Rhône-Alpes','43':'Auvergne-Rhône-Alpes','63':'Auvergne-Rhône-Alpes','73':'Auvergne-Rhône-Alpes','74':'Auvergne-Rhône-Alpes','13':'PACA','06':'PACA','83':'PACA','84':'PACA','04':'PACA','05':'PACA','31':'Occitanie','34':'Occitanie','30':'Occitanie','11':'Occitanie','66':'Occitanie','09':'Occitanie','12':'Occitanie','32':'Occitanie','46':'Occitanie','48':'Occitanie','65':'Occitanie','81':'Occitanie','82':'Occitanie','33':'Nouvelle-Aquitaine','24':'Nouvelle-Aquitaine','40':'Nouvelle-Aquitaine','47':'Nouvelle-Aquitaine','64':'Nouvelle-Aquitaine','16':'Nouvelle-Aquitaine','17':'Nouvelle-Aquitaine','19':'Nouvelle-Aquitaine','23':'Nouvelle-Aquitaine','79':'Nouvelle-Aquitaine','86':'Nouvelle-Aquitaine','87':'Nouvelle-Aquitaine','59':'Hauts-de-France','62':'Hauts-de-France','02':'Hauts-de-France','60':'Hauts-de-France','80':'Hauts-de-France','44':'Pays de la Loire','49':'Pays de la Loire','53':'Pays de la Loire','72':'Pays de la Loire','85':'Pays de la Loire','35':'Bretagne','22':'Bretagne','29':'Bretagne','56':'Bretagne','76':'Normandie','14':'Normandie','27':'Normandie','50':'Normandie','61':'Normandie'};
 
@@ -756,8 +754,7 @@ async function loadAO() {
   // FIX: empêche les appels concurrents (race condition)
   if (isLoading) return;
   isLoading = true;
-  document.body.classList.add('is-loading');
-  document.getElementById('overlay').style.display = 'block';
+  document.getElementById('overlay').classList.remove('hidden');
   const container = document.getElementById('res');
   container.innerHTML = '<div class="loading"><div class="spinner"></div><h3>Connexion à BOAMP…</h3><p class="loading-sub">Préparation de ' + queriesIT.length + ' requêtes</p><div class="progress-outer"><div class="progress-inner" id="prog-bar" style="width:0%"></div></div><div class="progress-label" id="prog-label">0 / ' + queriesIT.length + ' requêtes</div></div>';
 
@@ -1010,8 +1007,7 @@ async function loadAO() {
   } finally {
     // FIX: toujours libérer le verrou même en cas d'erreur
     isLoading = false;
-    document.body.classList.remove('is-loading');
-    document.getElementById('overlay').style.display = 'none';
+    document.getElementById('overlay').classList.add('hidden');
   }
 }
 
