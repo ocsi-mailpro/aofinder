@@ -453,6 +453,34 @@ input[type="number"]::-webkit-outer-spin-button { display: none; }
 .ao-link:hover { gap: 12px; }
 .ao-no-link { color: var(--text3); font-size: 14px; }
 
+
+/* ── BARRE DE PROGRESSION ── */
+.loading { text-align: center; padding: 80px 40px; }
+.loading h3 { font-size: 22px; font-weight: 700; margin-bottom: 8px; color: var(--text); }
+.loading-sub { font-size: 14px; color: var(--text2); margin-bottom: 28px; }
+
+.progress-outer {
+  width: 360px;
+  max-width: 90vw;
+  height: 6px;
+  background: var(--border);
+  border-radius: 6px;
+  margin: 0 auto 14px;
+  overflow: hidden;
+}
+.progress-inner {
+  height: 100%;
+  background: linear-gradient(90deg, var(--accent), var(--success));
+  border-radius: 6px;
+  width: 0%;
+  transition: width 0.3s ease;
+}
+.progress-label {
+  font-size: 13px;
+  color: var(--text3);
+  font-variant-numeric: tabular-nums;
+}
+
 /* ── ACCORDÉON DESCRIPTION ── */
 .ao-toggle-btn {
   display: inline-flex;
@@ -523,6 +551,19 @@ input[type="number"]::-webkit-outer-spin-button { display: none; }
 }
 @keyframes spin { to { transform: rotate(360deg); } }
 .loading h3 { color: var(--text); font-size: 20px; margin-bottom: 8px; }
+.loading-sub { font-size: 14px; color: var(--text2); margin: 6px 0 20px; }
+.progress-outer {
+  width: 320px; max-width: 80vw; height: 5px;
+  background: var(--border2); border-radius: 5px;
+  margin: 0 auto 10px; overflow: hidden;
+}
+.progress-inner {
+  height: 100%;
+  background: linear-gradient(90deg, var(--accent), var(--success));
+  border-radius: 5px; width: 0%;
+  transition: width 0.3s ease;
+}
+.progress-label { font-size: 12px; color: var(--text3); }
 
 /* ── TOAST ── */
 .toast {
@@ -712,7 +753,7 @@ async function loadAO() {
   document.getElementById('overlay').classList.remove('hidden');
 
   const container = document.getElementById('res');
-  container.innerHTML = '<div class="loading"><div class="spinner"></div><h3>Chargement...</h3><p style="margin-top:12px;color:var(--text3);">Envoi de 80+ requêtes à BOAMP, merci de patienter…</p></div>';
+  container.innerHTML = '<div class="loading"><div class="spinner"></div><h3>Connexion à BOAMP…</h3><p class="loading-sub">Préparation de ' + queriesIT.length + ' requêtes</p><div class="progress-outer"><div class="progress-inner" id="prog-bar" style="width:0%"></div></div><div class="progress-label" id="prog-label">0 / ' + queriesIT.length + ' requêtes</div></div>';
 
   try {
     let allResults = [];
@@ -726,118 +767,140 @@ async function loadAO() {
     } else {
       const queriesIT = [
         // ── LOGICIELS & APPLICATIONS ──
-        'logiciel','software','progiciel','application informatique',
-        'solution logicielle','plateforme numérique','solution SaaS',
+        'logiciel','software OR progiciel','application informatique OR solution logicielle',
+        'plateforme numérique OR solution SaaS','édition logicielle OR éditeur logiciel',
 
         // ── IBM i / AS400 (OCSI prioritaire) ──
-        'ibmi','as400','AS/400','iseries','rpg','cobol AS400',
-        'db2 400','iSeries IBM',
+        'ibmi OR as400','AS/400 OR iseries','rpg OR cobol','db2 400 OR iSeries',
+        'IBMi modernisation OR migration AS400',
 
-        // ── LANGAGES & FRAMEWORKS OCSI ──
-        'java','j2ee OR jee','spring OR springboot',
-        'dotnet OR ".net"','"c#" OR ASP.NET',
-        'php','symfony','laravel','python','django OR flask',
-        'scala OR kotlin','golang OR rust',
+        // ── LANGAGES & FRAMEWORKS ──
+        'java OR j2ee','spring OR springboot OR hibernate',
+        'dotnet OR ".net" OR "c#"','"c#" OR ASP.NET OR blazor',
+        'php OR symfony','laravel OR codeigniter',
+        'python OR django','flask OR fastapi',
+        'scala OR kotlin OR groovy','golang OR rust OR elixir',
+        'ruby OR rails','perl OR lua',
 
         // ── DÉVELOPPEMENT WEB & MOBILE ──
-        '"site web"','application web','portail web',
-        'développement web','react OR reactjs','angular','vue.js OR vuejs',
-        'node.js OR nodejs','typescript',
-        'application mobile','iOS OR android','flutter OR react native',
-        'intranet','extranet',
+        '"site web" OR "application web"','portail web OR extranet OR intranet',
+        'développement web OR refonte site','react OR reactjs OR next.js',
+        'angular OR angularjs','vue.js OR vuejs OR nuxt',
+        'node.js OR nodejs OR deno','typescript OR javascript',
+        'application mobile OR app mobile','iOS OR android OR cross-platform',
+        'flutter OR react native OR ionic','PWA OR progressive web app',
+        'e-commerce OR boutique en ligne','CMS OR wordpress OR drupal',
 
         // ── INFRASTRUCTURE & CLOUD ──
-        'serveur informatique','infrastructure informatique',
-        'cloud computing','cloud public','cloud privé','cloud hybride',
-        'azure','aws OR amazon web services','google cloud OR GCP',
-        'datacenter','hébergement informatique',
-        'virtualisation','vmware OR vsphere','hyper-v',
-        'conteneur OR container','microservices',
+        'serveur informatique OR serveur dédié','infrastructure informatique OR parc informatique',
+        'cloud computing OR cloud public','cloud privé OR cloud hybride OR multicloud',
+        'azure OR microsoft azure','aws OR amazon web services',
+        'google cloud OR GCP OR OVH cloud','datacenter OR centre de données',
+        'hébergement informatique OR hosting','virtualisation OR VM',
+        'vmware OR vsphere OR vCenter','hyper-v OR proxmox',
+        'conteneur OR container OR docker','kubernetes OR k8s OR openshift',
+        'microservices OR architecture distribuée','serverless OR lambda',
 
         // ── DEVOPS & AUTOMATISATION ──
-        'devops','CI/CD','jenkins','gitlab','github actions',
-        'docker','kubernetes OR k8s','terraform','ansible',
-        'pipeline déploiement','automatisation informatique',
+        'devops OR devsecops','CI/CD OR intégration continue',
+        'jenkins OR gitlab CI','github actions OR azure devops',
+        'terraform OR pulumi','ansible OR puppet OR chef',
+        'pipeline déploiement OR release management','automatisation informatique OR scripting',
+        'SRE OR site reliability','observabilité OR monitoring devops',
 
         // ── CYBERSÉCURITÉ ──
-        'cybersécurité','sécurité informatique','sécurité SI',
-        'firewall','pare-feu','antivirus OR EDR',
-        'SIEM OR SOC','pentest OR test intrusion',
-        'conformité RGPD','ISO 27001',
-        'sauvegarde informatique','plan continuité informatique',
-        'vulnerability OR vulnérabilité','zero trust',
+        'cybersécurité OR cyber','sécurité informatique OR sécurité SI',
+        'firewall OR pare-feu OR WAF','antivirus OR EDR OR XDR',
+        'SIEM OR SOC OR NOC','pentest OR test intrusion OR audit sécurité',
+        'conformité RGPD OR DPO','ISO 27001 OR NIS2 OR PSSI',
+        'sauvegarde informatique OR backup OR PRA','PCA OR plan continuité informatique',
+        'vulnérabilité OR CVE OR patch management','zero trust OR IAM OR PAM',
+        'chiffrement OR PKI OR certificat','ANSSI OR homologation sécurité',
 
         // ── RÉSEAUX & TÉLÉCOM ──
-        'réseau informatique','switch OR routeur réseau',
-        'wifi OR WLAN','borne wifi','câblage réseau',
-        'téléphonie IP','VOIP OR IPBX','trunk SIP',
-        'MPLS OR SD-WAN','VPN','fibre optique',
+        'réseau informatique OR LAN OR WAN','switch OR routeur OR commutateur',
+        'wifi OR WLAN OR borne wifi','câblage réseau OR fibre optique',
+        'téléphonie IP OR VOIP','IPBX OR trunk SIP OR Teams direct routing',
+        'MPLS OR SD-WAN OR SASE','VPN OR accès distant OR ZTNA',
+        'QoS OR gestion bande passante','load balancer OR proxy OR reverse proxy',
 
         // ── DATA & BI ──
-        '"base de données"','SGBD OR SQL',
-        'oracle database','mysql OR postgresql OR mariadb',
-        '"Business Intelligence"','BI OR reporting',
-        'data warehouse','data lake','big data',
-        '"data engineer"','data analyst','data science',
-        'machine learning OR IA','intelligence artificielle',
-        'ETL OR ELT','power BI OR tableau OR qlik',
+        '"base de données" OR SGBD','SQL OR NoSQL OR NewSQL',
+        'oracle database OR SQL Server','mysql OR postgresql OR mariadb',
+        '"Business Intelligence" OR BI OR tableau','power BI OR qlik OR looker',
+        'data warehouse OR entrepôt de données','data lake OR data lakehouse',
+        'big data OR hadoop OR spark','data engineer OR ingénieur données',
+        'data analyst OR analyste données','data science OR science des données',
+        'machine learning OR ML OR deep learning','intelligence artificielle OR IA générative',
+        'LLM OR GPT OR RAG OR IA','ETL OR ELT OR pipeline données',
+        'MDM OR master data management','dataops OR mlops',
 
-        // ── ERP / CRM / APPLICATIONS MÉTIER ──
-        'ERP','CRM','SIRH OR RH informatique',
-        'SAP','salesforce','odoo OR sage',
-        'GMAO OR CMMS','GED OR ECM',
-        'dématérialisation','parapheur électronique',
-        'signature électronique','archivage électronique',
-        'workflow OR BPM','messagerie électronique',
+        // ── ERP / CRM / MÉTIER ──
+        'ERP OR enterprise resource planning','CRM OR gestion relation client',
+        'SIRH OR système RH','SAP OR SAP S/4HANA',
+        'salesforce OR HubSpot','odoo OR sage OR cegid',
+        'GMAO OR CMMS OR maintenance assistée','GED OR ECM OR gestion documentaire',
+        'dématérialisation OR zéro papier','parapheur électronique OR signature numérique',
+        'signature électronique OR cachet serveur','archivage électronique OR coffre-fort',
+        'workflow OR BPM OR processus','messagerie OR zimbra OR exchange',
+        'comptabilité OR facturation OR ERP finance','gestion de projet OR PPM',
 
         // ── SYSTÈMES D'INFORMATION ──
-        '"système d\'information"','schéma directeur informatique',
-        'architecture SI','transformation digitale',
-        'urbanisation SI','audit informatique',
-        'MOA informatique','MOE informatique',
+        'systeme information OR SI','schema directeur informatique OR SDI',
+        'architecture SI OR urbanisation SI','transformation digitale OR digitalisation',
+        'audit informatique OR audit SI','MOA informatique OR AMOA',
+        'MOE informatique OR maîtrise oeuvre','conduite changement OR accompagnement SI',
 
         // ── MATÉRIEL INFORMATIQUE ──
-        'ordinateur OR PC portable','poste de travail',
-        'serveur rack OR lame','baie serveur',
-        'imprimante réseau','scanner réseau','tablette informatique',
-        'écran informatique','UPS OR onduleur informatique',
-        'équipement réseau','NAS OR SAN stockage',
+        'ordinateur OR PC portable OR workstation','poste de travail OR thin client',
+        'serveur rack OR lame OR tour','baie serveur OR armoire réseau',
+        'imprimante réseau OR multifonction','scanner réseau OR numérisation',
+        'tablette informatique OR iPad professionnel','écran informatique OR moniteur',
+        'onduleur OR UPS informatique','NAS OR SAN OR stockage réseau',
+        'équipement réseau OR firewall matériel','docking station OR accessoires IT',
 
         // ── SERVICES IT ──
-        'maintenance informatique','support informatique',
-        'infogérance','tierce maintenance applicative OR TMA',
-        'MCO OR maintien opérationnel','helpdesk OR service desk',
-        'assistance technique informatique','régie informatique',
-        'audit SI','conseil informatique',
+        'maintenance informatique OR MCO','support informatique OR helpdesk',
+        'infogérance OR MSP','tierce maintenance OR TMA',
+        'maintien condition opérationnelle OR TMA','service desk OR centre de services',
+        'assistance technique informatique OR AMOE','régie informatique OR ESN',
+        'audit SI OR conseil informatique','ITIL OR ITSM OR gestion services IT',
 
         // ── LICENCES & ÉDITEURS ──
-        'Microsoft OR Office 365','Windows server','licence logiciel',
-        'adobe OR autodesk','vmware licence',
-        'linux OR open source','red hat OR ubuntu serveur',
+        'Microsoft OR Office 365 OR M365','Windows server OR Active Directory',
+        'licence logiciel OR abonnement SaaS','adobe OR creative cloud',
+        'autodesk OR autocad OR revit','vmware licence OR hyper-v licence',
+        'linux OR open source OR red hat','ubuntu OR debian serveur',
+        'antivirus licence OR sécurité endpoint',
 
         // ── FORMATION IT ──
-        'formation informatique','formation développement',
-        'formation cybersécurité','formation cloud',
-        'certification AWS OR azure certification',
-        'formation devops','MOOC informatique',
+        'formation informatique OR e-learning IT','formation développement OR coding bootcamp',
+        'formation cybersécurité OR sécurité SI','formation cloud OR AWS training',
+        'certification Microsoft OR azure certification','formation devops OR agile scrum',
+        'formation data OR data analyst formation','MOOC informatique OR plateforme LMS',
 
         // ── RPA & IA ──
-        'RPA OR robotic process automation','UiPath OR blue prism',
-        'power automate','chatbot OR agent conversationnel',
-        'NLP OR traitement langage naturel',
+        'RPA OR robotic process automation','UiPath OR blue prism OR automation anywhere',
+        'power automate OR zapier','chatbot OR agent conversationnel OR voicebot',
+        'NLP OR traitement langage naturel OR NLU','OCR OR reconnaissance caractères',
+        'computer vision OR reconnaissance image',
+
+        // ── COLLABORATION & OUTILS ──
+        'outil collaboratif OR digital workplace','Microsoft Teams OR Slack OR Zoom pro',
+        'ticketing OR JIRA OR ServiceNow','confluence OR notion OR sharepoint',
+        'gestion projet informatique OR agile','scrum OR kanban OR SAFe',
 
         // ── AUTRES IT ──
-        'ITSM OR ITIL','supervision informatique',
-        'monitoring OR observabilité','Zabbix OR Nagios OR Grafana',
-        'API management OR gateway','ESB OR middleware',
-        'blockchain','IoT OR internet des objets',
-        'numérique','informatique'
+        'supervision informatique OR hypervision','monitoring OR Zabbix OR Nagios OR Grafana',
+        'API management OR gateway OR Kong','ESB OR middleware OR intégration',
+        'blockchain OR DLT','IoT OR internet des objets OR M2M',
+        'numérique OR digital OR informatique','SCADA OR supervision industrielle'
       ];
 
       console.log(`🔍 ${queriesIT.length} requêtes BOAMP en parallèle...`);
 
       // PERF: batch de 10 en parallèle = 10x plus rapide
-      const BATCH_SIZE = 10;
+      const BATCH_SIZE = 20;
       for (let i = 0; i < queriesIT.length; i += BATCH_SIZE) {
         const batch = queriesIT.slice(i, i + BATCH_SIZE);
         const batchResults = await Promise.all(
@@ -852,7 +915,10 @@ async function loadAO() {
         );
         batchResults.forEach(records => allResults = allResults.concat(records));
         const progress = Math.min(i + BATCH_SIZE, queriesIT.length);
-        container.innerHTML = `<div class="loading"><div class="spinner"></div><h3>Chargement...</h3><p style="margin-top:12px;color:var(--text3);">Requêtes BOAMP : ${progress} / ${queriesIT.length}</p></div>`;
+        var bar = document.getElementById('prog-bar');
+        var lbl = document.getElementById('prog-label');
+        if (bar) { bar.style.width = Math.round((progress / queriesIT.length) * 100) + '%'; }
+        if (lbl) { lbl.textContent = progress + ' / ' + queriesIT.length + ' requêtes'; }
       }
 
       console.log(`✅ ${allResults.length} résultats bruts`);
