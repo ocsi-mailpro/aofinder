@@ -244,24 +244,23 @@ async function loadAO() {
       const data = await resp.json();
       if (data.records) allResults = data.records;
     } else {
-      const BATCH = 20;
-      for (let i = 0; i < queriesIT.length; i += BATCH) {
-        const batch = queriesIT.slice(i, i + BATCH);
-        const results = await Promise.all(batch.map(async q => {
-          try {
-            const p = new URLSearchParams({dataset:'boamp', q:q, rows:200, sort:'dateparution'});
-            const r = await fetch(API_BASE + '?' + p);
-            const d = await r.json();
-            return d.records || [];
-          } catch { return []; }
-        }));
-        results.forEach(r => allResults = allResults.concat(r));
-        const prog = Math.min(i + BATCH, queriesIT.length);
-        const bar = document.getElementById('prog-bar');
-        const lbl = document.getElementById('prog-lbl');
-        if (bar) bar.style.width = Math.round(prog / queriesIT.length * 100) + '%';
-        if (lbl) lbl.textContent = 'Requêtes : ' + prog + ' / ' + queriesIT.length;
-      }
+      // Toutes les requêtes en parallèle = vitesse maximale
+      const lbl = document.getElementById('prog-lbl');
+      const bar = document.getElementById('prog-bar');
+      if (lbl) lbl.textContent = 'Envoi de ' + queriesIT.length + ' requêtes...';
+      let done = 0;
+      const allResultsArr = await Promise.all(queriesIT.map(async q => {
+        try {
+          const p = new URLSearchParams({dataset:'boamp', q:q, rows:200, sort:'dateparution'});
+          const r = await fetch(API_BASE + '?' + p);
+          const d = await r.json();
+          done++;
+          if (bar) bar.style.width = Math.round(done / queriesIT.length * 100) + '%';
+          if (lbl) lbl.textContent = 'Requêtes : ' + done + ' / ' + queriesIT.length;
+          return d.records || [];
+        } catch { done++; return []; }
+      }));
+      allResultsArr.forEach(r => allResults = allResults.concat(r));
       const seen = new Set();
       allResults = allResults.filter(r => {
         const id = r.fields.idweb || r.recordid;
