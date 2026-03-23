@@ -593,8 +593,7 @@ input[type="number"]::-webkit-outer-spin-button { display: none; }
 .load-more { text-align: center; padding: 40px; }
 .load-more .btn { background: var(--accent); color: white; border-color: var(--accent); }
 .load-more .btn:hover { background: #0077ed; }
-.loading-overlay { position: fixed; inset: 0; z-index: 500; pointer-events: all; }
-.loading-overlay.hidden { display: none; }
+.loading-overlay { display: none; }
 
 @media (max-width: 768px) {
   .hero h1 { font-size: 48px; }
@@ -613,8 +612,6 @@ input[type="number"]::-webkit-outer-spin-button { display: none; }
 <body>
 
 <div class="bg-gradient"></div>
-<div class="loading-overlay hidden" id="overlay"></div>
-
 <!-- TOGGLE THÈME -->
 <button class="theme-toggle" onclick="toggleTheme()" id="themeBtn">
   <span class="icon" id="themeIcon">☀️</span>
@@ -750,8 +747,6 @@ async function loadAO() {
   // FIX: empêche les appels concurrents (race condition)
   if (isLoading) return;
   isLoading = true;
-  document.getElementById('overlay').classList.remove('hidden');
-
   const container = document.getElementById('res');
   container.innerHTML = '<div class="loading"><div class="spinner"></div><h3>Connexion à BOAMP…</h3><p class="loading-sub">Préparation de ' + queriesIT.length + ' requêtes</p><div class="progress-outer"><div class="progress-inner" id="prog-bar" style="width:0%"></div></div><div class="progress-label" id="prog-label">0 / ' + queriesIT.length + ' requêtes</div></div>';
 
@@ -1004,7 +999,6 @@ async function loadAO() {
   } finally {
     // FIX: toujours libérer le verrou même en cas d'erreur
     isLoading = false;
-    document.getElementById('overlay').classList.add('hidden');
   }
 }
 
