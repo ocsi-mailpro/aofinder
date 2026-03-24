@@ -366,13 +366,20 @@ async function loadAO() {
     try {
       const tedAO = await fetchTED();
       if (tedAO.length > 0) {
-        // Évite les doublons avec BOAMP
         const existingIds = new Set(allAO.map(a => a.id));
         const newTED = tedAO.filter(a => !existingIds.has(a.id));
-        allAO = allAO.concat(newTED);
+        // TED en PREMIER, puis BOAMP
+        allAO = newTED.concat(allAO);
         console.log('✅ TED: ' + newTED.length + ' AO européens ajoutés');
       }
     } catch(e) {}
+    // Tri par deadline (les plus urgents en premier, N/A à la fin)
+    allAO.sort((a, b) => {
+      if (a.deadline === 'N/A' && b.deadline === 'N/A') return 0;
+      if (a.deadline === 'N/A') return 1;
+      if (b.deadline === 'N/A') return -1;
+      return new Date(a.deadline) - new Date(b.deadline);
+    });
     displayed = 0; displayAO(); updateStats(allAO.length);
     toast('✓ ' + allAO.length + ' AO (BOAMP + TED)');
   } catch(e) {
