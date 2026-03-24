@@ -143,7 +143,7 @@ input::placeholder { color: var(--text3); }
 
 <script>
 const API_BASE = 'https://boamp-datadila.opendatasoft.com/api/records/1.0/search/';
-const TED_BASE = 'https://ted.europa.eu/api/v3.0/notices/search';
+const TED_BASE = 'https://api.ted.europa.eu/v3/notices/search';
 let allAO = [], displayed = 0, searchTimeout;
 const PER_PAGE = 50;
 let isLoading = false;
@@ -162,52 +162,63 @@ function estIT(titre, desc) {
 }
 
 // ── TED API (AO européens France) ──
+// API POST anonyme : https://api.ted.europa.eu/v3/notices/search
 async function fetchTED() {
   try {
-    // CPV IT : 48=Logiciels, 72=Services IT, 30=Matériel IT
-    // Filtre France (PC = FR) + AO ouverts uniquement
-    const queries = [
-      'classification-cpv IN (48000000, 48100000, 48200000, 48300000, 48400000, 48500000, 48600000, 48700000, 48800000, 48900000) AND PC = FR',
-      'classification-cpv IN (72000000, 72100000, 72200000, 72300000, 72400000, 72500000, 72600000, 72700000, 72800000, 72900000) AND PC = FR',
-      'classification-cpv IN (30000000, 30100000, 30200000, 30210000, 30230000) AND PC = FR'
+    // CPV IT officiels : 48=Logiciels, 72=Services IT, 30=Matériel IT
+    // Syntaxe expert TED : place-of-performance IN (FRA) + scope ACTIVE
+    const tedQueries = [
+      'cpv IN (48000000,48100000,48200000,48300000,48400000,48500000,48600000,48700000,48800000,48900000) AND place-of-performance IN (FRA)',
+      'cpv IN (72000000,72100000,72200000,72300000,72400000,72500000,72600000,72700000,72800000,72900000) AND place-of-performance IN (FRA)',
+      'cpv IN (30000000,30100000,30200000,30210000,30230000) AND place-of-performance IN (FRA)'
     ];
     let results = [];
-    await Promise.all(queries.map(async q => {
+    await Promise.all(tedQueries.map(async query => {
       try {
-        const params = new URLSearchParams({
-          q: q,
-          fields: 'ND,TI,AU,DT,TD,PC,CPV,TY',
-          limit: 100,
-          page: 1,
-          scope: 'ACTIVE'
+        const resp = await fetch(TED_BASE, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+          body: JSON.stringify({
+            query: query,
+            fields: ['publication-number','notice-title','buyer-name','deadline-date','place-of-performance','notice-type'],
+            limit: 100,
+            scope: 'ACTIVE',
+            paginationMode: 'ITERATION',
+            checkQuerySyntax: false
+          })
         });
-        const resp = await fetch(TED_BASE + '?' + params);
         const data = await resp.json();
         if (data.notices) results = results.concat(data.notices);
-      } catch(e) { /* ignore erreur TED */ }
+      } catch(e) { /* ignore */ }
     }));
-    // Déduplique par ND
+    // Déduplique
     const seen = new Set();
     results = results.filter(n => {
-      if (seen.has(n.ND)) return false;
-      seen.add(n.ND); return true;
+      const id = n['publication-number'] || n.ND;
+      if (!id || seen.has(id)) return false;
+      seen.add(id); return true;
     });
     return results.map(n => {
-      const title = n.TI ? (n.TI.FRA || n.TI.ENG || Object.values(n.TI)[0] || 'Sans titre') : 'Sans titre';
-      const nd = n.ND || 'N/A';
-      const pubNum = nd.replace('/', '-');
+      const pubNum = n['publication-number'] || n.ND || 'N/A';
+      const titleObj = n['notice-title'] || {};
+      const title = titleObj.fra || titleObj.eng || Object.values(titleObj)[0] || 'Sans titre';
+      const buyerArr = n['buyer-name'] || [];
+      const client = Array.isArray(buyerArr) ? (buyerArr[0] || 'Non spécifié') : (buyerArr || 'Non spécifié');
+      const deadline = n['deadline-date'] || 'N/A';
+      const perfArr = n['place-of-performance'] || [];
+      const location = Array.isArray(perfArr) && perfArr.length ? perfArr.join(', ') : 'France (EU)';
       return {
-        id: nd,
+        id: pubNum,
         title: title,
-        client: n.AU ? (n.AU[0] || 'Non spécifié') : 'Non spécifié',
-        deadline: n.DT || 'N/A',
-        location: 'France (UE)',
+        client: client,
+        deadline: deadline,
+        location: location,
         description: '',
-        url: 'https://ted.europa.eu/fr/notice/' + pubNum,
+        url: 'https://ted.europa.eu/fr/notice/' + pubNum.replace('/', '-'),
         source: 'TED'
       };
-    }).filter(ao => estIT(ao.title, ao.description));
-  } catch(e) { return []; }
+    }).filter(ao => estIT(ao.title, ''));
+  } catch(e) { console.error('TED error:', e); return []; }
 }
 
 async function loadAO() {
