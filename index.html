@@ -71,7 +71,6 @@ input::placeholder { color: var(--text3); }
 .ao-title { font-size: 22px; font-weight: 600; letter-spacing: -0.01em; margin-bottom: 8px; line-height: 1.3; color: var(--text); }
 .ao-client { color: var(--text2); font-size: 15px; display: flex; align-items: center; gap: 6px; }
 .badge { padding: 6px 14px; border-radius: 100px; font-size: 13px; font-weight: 600; white-space: nowrap; background: linear-gradient(135deg, rgba(0,113,227,0.15), rgba(48,209,88,0.15)); color: var(--accent); border: 1px solid rgba(0,113,227,0.3); }
-.badge-ted { background: linear-gradient(135deg, rgba(255,181,71,0.15), rgba(255,100,0,0.15)); color: #ffb547; border-color: rgba(255,181,71,0.4); }
 .ao-bubbles { display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 20px; }
 .bubble { display: flex; flex-direction: column; gap: 3px; padding: 10px 16px; border-radius: 14px; border: 1px solid; transition: transform 0.2s, box-shadow 0.2s; min-width: 100px; }
 .bubble:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(0,0,0,0.15); }
@@ -143,7 +142,6 @@ input::placeholder { color: var(--text3); }
 
 <script>
 const API_BASE = 'https://boamp-datadila.opendatasoft.com/api/records/1.0/search/';
-const TED_BASE = 'https://api.ted.europa.eu/v3/notices/search';
 let allAO = [], displayed = 0, searchTimeout;
 const PER_PAGE = 50;
 let isLoading = false;
@@ -159,66 +157,6 @@ function estIT(titre, desc) {
   const it = ['ibmi','as/400','as400','rpg','cobol','iseries','db2 400','java','j2ee','spring','hibernate','.net','c#','asp.net','dotnet','php','symfony','laravel','python','django','flask','serveur','cloud','azure','aws','google cloud','gcp','infrastructure informatique','parc informatique','datacenter','hébergement','virtualisation','vmware','hyper-v','devops','ci/cd','jenkins','gitlab','github','docker','kubernetes','terraform','ansible','site web','application web','portail web','développement web','react','angular','vue.js','node.js','base de données','sql','oracle','mysql','postgresql','data engineer','big data','business intelligence','analytics','réseau informatique','switch','routeur','wifi','firewall','téléphonie ip','voip','cybersécurité','cyber','sécurité informatique','antivirus','pare-feu','sauvegarde informatique','backup','erp','crm','sirh','ged électronique','gmao','sap','salesforce','odoo','système d\'information','architecture si','schéma directeur','maintenance informatique','support informatique','infogérance','tma','tierce maintenance','mco','poste de travail','ordinateur','matériel informatique','équipement informatique','imprimante réseau','copieur réseau','microsoft','office 365','windows server','adobe','autocad','dématérialisation','signature électronique','archivage électronique','transformation digitale','numérique','logiciel','software','progiciel','application','plateforme web','solution logicielle','formation informatique','certification informatique'];
   for (let m of it) { if (t.includes(m)) return true; }
   return false;
-}
-
-// ── TED API (AO européens France) ──
-// API POST anonyme : https://api.ted.europa.eu/v3/notices/search
-async function fetchTED() {
-  try {
-    // CPV IT officiels : 48=Logiciels, 72=Services IT, 30=Matériel IT
-    // Syntaxe expert TED : place-of-performance IN (FRA) + scope ACTIVE
-    const tedQueries = [
-      'cpv IN (48000000,48100000,48200000,48300000,48400000,48500000,48600000,48700000,48800000,48900000) AND place-of-performance IN (FRA)',
-      'cpv IN (72000000,72100000,72200000,72300000,72400000,72500000,72600000,72700000,72800000,72900000) AND place-of-performance IN (FRA)',
-      'cpv IN (30000000,30100000,30200000,30210000,30230000) AND place-of-performance IN (FRA)'
-    ];
-    let results = [];
-    await Promise.all(tedQueries.map(async query => {
-      try {
-        const resp = await fetch(TED_BASE, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
-          body: JSON.stringify({
-            query: query,
-            fields: ['publication-number','notice-title','buyer-name','deadline-date','place-of-performance','notice-type'],
-            limit: 100,
-            scope: 'ACTIVE',
-            paginationMode: 'ITERATION',
-            checkQuerySyntax: false
-          })
-        });
-        const data = await resp.json();
-        if (data.notices) results = results.concat(data.notices);
-      } catch(e) { /* ignore */ }
-    }));
-    // Déduplique
-    const seen = new Set();
-    results = results.filter(n => {
-      const id = n['publication-number'] || n.ND;
-      if (!id || seen.has(id)) return false;
-      seen.add(id); return true;
-    });
-    return results.map(n => {
-      const pubNum = n['publication-number'] || n.ND || 'N/A';
-      const titleObj = n['notice-title'] || {};
-      const title = titleObj.fra || titleObj.eng || Object.values(titleObj)[0] || 'Sans titre';
-      const buyerArr = n['buyer-name'] || [];
-      const client = Array.isArray(buyerArr) ? (buyerArr[0] || 'Non spécifié') : (buyerArr || 'Non spécifié');
-      const deadline = n['deadline-date'] || 'N/A';
-      const perfArr = n['place-of-performance'] || [];
-      const location = Array.isArray(perfArr) && perfArr.length ? perfArr.join(', ') : 'France (EU)';
-      return {
-        id: pubNum,
-        title: title,
-        client: client,
-        deadline: deadline,
-        location: location,
-        description: '',
-        url: 'https://ted.europa.eu/fr/notice/' + pubNum.replace('/', '-'),
-        source: 'TED'
-      };
-    }).filter(ao => estIT(ao.title, ''));
-  } catch(e) { console.error('TED error:', e); return []; }
 }
 
 async function loadAO() {
@@ -362,26 +300,8 @@ async function loadAO() {
         url, source: 'BOAMP'
       };
     }).filter(ao => estIT(ao.title, ao.description));
-    // Ajoute les AO TED (Europe)
-    try {
-      const tedAO = await fetchTED();
-      if (tedAO.length > 0) {
-        const existingIds = new Set(allAO.map(a => a.id));
-        const newTED = tedAO.filter(a => !existingIds.has(a.id));
-        // TED en PREMIER, puis BOAMP
-        allAO = newTED.concat(allAO);
-        console.log('✅ TED: ' + newTED.length + ' AO européens ajoutés');
-      }
-    } catch(e) {}
-    // Tri par deadline (les plus urgents en premier, N/A à la fin)
-    allAO.sort((a, b) => {
-      if (a.deadline === 'N/A' && b.deadline === 'N/A') return 0;
-      if (a.deadline === 'N/A') return 1;
-      if (b.deadline === 'N/A') return -1;
-      return new Date(a.deadline) - new Date(b.deadline);
-    });
     displayed = 0; displayAO(); updateStats(allAO.length);
-    toast('✓ ' + allAO.length + ' AO (BOAMP + TED)');
+    toast('✓ ' + allAO.length + ' AO informatique');
   } catch(e) {
     console.error(e);
     container.innerHTML = '<div class="loading"><h3>⚠️ Erreur BOAMP</h3></div>';
@@ -412,9 +332,7 @@ function displayAO() {
     card.className = 'ao-card';
     const id = 'desc-' + Math.random().toString(36).slice(2,9);
     const hdr = document.createElement('div'); hdr.className = 'ao-header';
-    const badgeClass = ao.source === 'TED' ? 'badge badge-ted' : 'badge';
-    const badgeIcon = ao.source === 'TED' ? '🇪🇺' : '📡';
-    hdr.innerHTML = '<div><div class="ao-title">' + ao.title + '</div><div class="ao-client">🏢 ' + ao.client + '</div></div><div class="' + badgeClass + '">' + badgeIcon + ' ' + ao.source + '</div>';
+    hdr.innerHTML = '<div><div class="ao-title">' + ao.title + '</div><div class="ao-client">🏢 ' + ao.client + '</div></div><div class="badge">📡 ' + ao.source + '</div>';
     card.appendChild(hdr);
     const bub = document.createElement('div'); bub.className = 'ao-bubbles';
     bub.innerHTML = '<div class="bubble bubble-ref"><span class="bubble-label">REF</span><span class="bubble-val">' + ao.id + '</span></div>' +
