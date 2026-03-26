@@ -178,7 +178,7 @@ async function fetchTED() {
         const resp = await fetch(TED_BASE, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ query: q.query, fields: ['publication-number','notice-title','buyer-name','deadline-date','place-of-performance'], limit: 100, scope: 'ACTIVE' })
+          body: JSON.stringify({ query: q.query, fields: ['publication-number','notice-title','buyer-name','deadline-date','place-of-performance'], limit: '100', scope: 'ACTIVE', checkQuerySyntax: false, paginationMode: 'ITERATION' })
         });
         const data = await resp.json();
         if (data.notices) results = results.concat(data.notices);
