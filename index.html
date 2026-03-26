@@ -144,6 +144,7 @@ input::placeholder { color: var(--text3); }
 
 <script>
 const API_BASE = 'https://boamp-datadila.opendatasoft.com/api/records/1.0/search/';
+const TED_BASE = '/api/ted';
 let allAO = [], displayed = 0, searchTimeout;
 const PER_PAGE = 50;
 let isLoading = false;
@@ -161,6 +162,50 @@ function estIT(titre, desc) {
   return false;
 }
 
+
+
+// ── TED via proxy Railway ──
+async function fetchTED() {
+  try {
+    const queries = [
+      { query: 'cpv IN (48000000,48100000,48200000,48300000,48400000,48500000,48600000,48700000,48800000,48900000) AND place-of-performance IN (FRA)' },
+      { query: 'cpv IN (72000000,72100000,72200000,72300000,72400000,72500000,72600000,72700000,72800000,72900000) AND place-of-performance IN (FRA)' },
+      { query: 'cpv IN (30000000,30100000,30200000,30210000,30230000) AND place-of-performance IN (FRA)' }
+    ];
+    let results = [];
+    await Promise.all(queries.map(async q => {
+      try {
+        const resp = await fetch(TED_BASE, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ query: q.query, fields: ['publication-number','notice-title','buyer-name','deadline-date','place-of-performance'], limit: 100, scope: 'ACTIVE' })
+        });
+        const data = await resp.json();
+        if (data.notices) results = results.concat(data.notices);
+      } catch(e) {}
+    }));
+    const seen = new Set();
+    return results.filter(n => {
+      const id = n['publication-number'];
+      if (!id || seen.has(id)) return false;
+      seen.add(id); return true;
+    }).map(n => {
+      const pubNum = n['publication-number'] || 'N/A';
+      const titleObj = n['notice-title'] || {};
+      const title = titleObj.fra || titleObj.eng || Object.values(titleObj)[0] || 'Sans titre';
+      const buyerArr = n['buyer-name'] || [];
+      const client = Array.isArray(buyerArr) ? (buyerArr[0] || 'Non specifie') : (buyerArr || 'Non specifie');
+      return {
+        id: pubNum, title, client,
+        deadline: n['deadline-date'] || 'N/A',
+        location: 'France (EU)',
+        description: '',
+        url: 'https://ted.europa.eu/fr/notice/' + pubNum.replace('/', '-'),
+        source: 'TED'
+      };
+    }).filter(ao => estIT(ao.title, ''));
+  } catch(e) { return []; }
+}
 
 async function loadAO() {
   if (isLoading) return;
@@ -306,8 +351,17 @@ async function loadAO() {
 
     // Tri par deadline (les plus urgents en premier, N/A à la fin)
     
+    // Merge TED
+    try {
+      const tedAO = await fetchTED();
+      if (tedAO.length > 0) {
+        const ids = new Set(allAO.map(a => a.id));
+        allAO = tedAO.filter(a => !ids.has(a.id)).concat(allAO);
+        console.log('TED: ' + tedAO.length + ' AO ajoutes');
+      }
+    } catch(e) {}
     displayed = 0; displayAO(); updateStats(allAO.length);
-    toast('✓ ' + allAO.length + ' AO informatique');
+    toast('✓ ' + allAO.length + ' AO (BOAMP + TED)');
   } catch(e) {
     console.error(e);
     container.innerHTML = '<div class="loading"><h3>⚠️ Erreur BOAMP</h3></div>';
