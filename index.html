@@ -2,6 +2,7 @@
 <html lang="fr" data-theme="dark">
 <head>
 <meta charset="UTF-8">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🔍</text></svg>">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>AOFinder — Appels d'Offres Informatique</title>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
@@ -119,7 +120,7 @@ input::placeholder { color: var(--text3); }
 <div class="hero">
   <h1>AOFinder</h1>
   <p>Appels d'offres informatique</p>
-  <div class="sources-badge"><div class="live"></div><span>API BOAMP Officielle</span></div>
+  <div class="sources-badge"><div class="live"></div><span>API BOAMP + TED Europa</span></div>
 </div>
 
 <div class="container">
@@ -143,7 +144,6 @@ input::placeholder { color: var(--text3); }
 
 <script>
 const API_BASE = 'https://boamp-datadila.opendatasoft.com/api/records/1.0/search/';
-const TED_BASE = 'https://api.ted.europa.eu/v3/notices/search';
 let allAO = [], displayed = 0, searchTimeout;
 const PER_PAGE = 50;
 let isLoading = false;
@@ -161,65 +161,6 @@ function estIT(titre, desc) {
   return false;
 }
 
-// ── TED API (AO européens France) ──
-// API POST anonyme : https://api.ted.europa.eu/v3/notices/search
-async function fetchTED() {
-  try {
-    // CPV IT officiels : 48=Logiciels, 72=Services IT, 30=Matériel IT
-    // Syntaxe expert TED : place-of-performance IN (FRA) + scope ACTIVE
-    const tedQueries = [
-      'cpv IN (48000000,48100000,48200000,48300000,48400000,48500000,48600000,48700000,48800000,48900000) AND place-of-performance IN (FRA)',
-      'cpv IN (72000000,72100000,72200000,72300000,72400000,72500000,72600000,72700000,72800000,72900000) AND place-of-performance IN (FRA)',
-      'cpv IN (30000000,30100000,30200000,30210000,30230000) AND place-of-performance IN (FRA)'
-    ];
-    let results = [];
-    await Promise.all(tedQueries.map(async query => {
-      try {
-        const resp = await fetch(TED_BASE, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
-          body: JSON.stringify({
-            query: query,
-            fields: ['publication-number','notice-title','buyer-name','deadline-date','place-of-performance','notice-type'],
-            limit: 100,
-            scope: 'ACTIVE',
-            paginationMode: 'ITERATION',
-            checkQuerySyntax: false
-          })
-        });
-        const data = await resp.json();
-        if (data.notices) results = results.concat(data.notices);
-      } catch(e) { /* ignore */ }
-    }));
-    // Déduplique
-    const seen = new Set();
-    results = results.filter(n => {
-      const id = n['publication-number'] || n.ND;
-      if (!id || seen.has(id)) return false;
-      seen.add(id); return true;
-    });
-    return results.map(n => {
-      const pubNum = n['publication-number'] || n.ND || 'N/A';
-      const titleObj = n['notice-title'] || {};
-      const title = titleObj.fra || titleObj.eng || Object.values(titleObj)[0] || 'Sans titre';
-      const buyerArr = n['buyer-name'] || [];
-      const client = Array.isArray(buyerArr) ? (buyerArr[0] || 'Non spécifié') : (buyerArr || 'Non spécifié');
-      const deadline = n['deadline-date'] || 'N/A';
-      const perfArr = n['place-of-performance'] || [];
-      const location = Array.isArray(perfArr) && perfArr.length ? perfArr.join(', ') : 'France (EU)';
-      return {
-        id: pubNum,
-        title: title,
-        client: client,
-        deadline: deadline,
-        location: location,
-        description: '',
-        url: 'https://ted.europa.eu/fr/notice/' + pubNum.replace('/', '-'),
-        source: 'TED'
-      };
-    }).filter(ao => estIT(ao.title, ''));
-  } catch(e) { console.error('TED error:', e); return []; }
-}
 
 async function loadAO() {
   if (isLoading) return;
@@ -362,21 +303,11 @@ async function loadAO() {
         url, source: 'BOAMP'
       };
     }).filter(ao => estIT(ao.title, ao.description));
-    // Ajoute les AO TED (Europe)
-    try {
-      const tedAO = await fetchTED();
-      if (tedAO.length > 0) {
-        const existingIds = new Set(allAO.map(a => a.id));
-        const newTED = tedAO.filter(a => !existingIds.has(a.id));
-        // TED en PREMIER, puis BOAMP
-        allAO = newTED.concat(allAO);
-        console.log('✅ TED: ' + newTED.length + ' AO européens ajoutés');
-      }
-    } catch(e) {}
+
     // Tri par deadline (les plus urgents en premier, N/A à la fin)
     
     displayed = 0; displayAO(); updateStats(allAO.length);
-    toast('✓ ' + allAO.length + ' AO (BOAMP + TED)');
+    toast('✓ ' + allAO.length + ' AO informatique');
   } catch(e) {
     console.error(e);
     container.innerHTML = '<div class="loading"><h3>⚠️ Erreur BOAMP</h3></div>';
