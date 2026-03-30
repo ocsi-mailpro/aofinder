@@ -167,23 +167,44 @@ function estIT(titre, desc) {
 // ── TED via proxy Railway ──
 async function fetchTED() {
   try {
-    const queries = [
-      { query: 'buyer-country = FRA AND cpv = 48*' },
-      { query: 'buyer-country = FRA AND cpv = 72*' },
-      { query: 'buyer-country = FRA AND cpv = 30*' }
+    // Recherche par mots-clés IT + pays France
+    // Syntaxe confirmée doc officielle TED v3
+    const keywords = [
+      'logiciel informatique',
+      'systeme information',
+      'infrastructure informatique',
+      'cybersecurite securite informatique',
+      'developpement application',
+      'maintenance informatique',
+      'cloud computing azure aws'
     ];
     let results = [];
-    await Promise.all(queries.map(async q => {
+    await Promise.all(keywords.map(async kw => {
       try {
         const resp = await fetch(TED_BASE, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ query: q.query, fields: ['publication-number','notice-title','buyer-name','deadline-date','place-of-performance'], limit: '100', scope: 'ACTIVE', checkQuerySyntax: false, paginationMode: 'ITERATION' })
+          body: JSON.stringify({
+            query: kw,
+            fields: ['publication-number','notice-title','buyer-name','deadline-date','place-of-performance','buyer-country'],
+            limit: '50',
+            scope: 'ACTIVE',
+            checkQuerySyntax: false
+          })
         });
         const data = await resp.json();
-        if (data.notices) results = results.concat(data.notices);
+        if (data.notices) {
+          // Filtre France uniquement côté client
+          const frOnly = data.notices.filter(n => {
+            const country = (n['buyer-country'] || '');
+            const place = JSON.stringify(n['place-of-performance'] || '');
+            return country === 'FRA' || place.includes('FRA') || place.includes('France');
+          });
+          results = results.concat(frOnly);
+        }
       } catch(e) {}
     }));
+    // Déduplique
     const seen = new Set();
     return results.filter(n => {
       const id = n['publication-number'];
@@ -194,7 +215,7 @@ async function fetchTED() {
       const titleObj = n['notice-title'] || {};
       const title = titleObj.fra || titleObj.eng || Object.values(titleObj)[0] || 'Sans titre';
       const buyerArr = n['buyer-name'] || [];
-      const client = Array.isArray(buyerArr) ? (buyerArr[0] || 'Non specifie') : (buyerArr || 'Non specifie');
+      const client = Array.isArray(buyerArr) ? (buyerArr[0] || 'Non specifie') : String(buyerArr || 'Non specifie');
       return {
         id: pubNum, title, client,
         deadline: n['deadline-date'] || 'N/A',
@@ -204,7 +225,7 @@ async function fetchTED() {
         source: 'TED'
       };
     }).filter(ao => estIT(ao.title, ''));
-  } catch(e) { return []; }
+  } catch(e) { console.error('TED:', e); return []; }
 }
 
 async function loadAO() {
