@@ -168,9 +168,9 @@ function estIT(titre, desc) {
 async function fetchTED() {
   try {
     const queries = [
-      { query: 'cpv IN (48000000,48100000,48200000,48300000,48400000,48500000,48600000,48700000,48800000,48900000) AND place-of-performance IN (FRA)' },
-      { query: 'cpv IN (72000000,72100000,72200000,72300000,72400000,72500000,72600000,72700000,72800000,72900000) AND place-of-performance IN (FRA)' },
-      { query: 'cpv IN (30000000,30100000,30200000,30210000,30230000) AND place-of-performance IN (FRA)' }
+      { query: 'buyer-country = FRA AND cpv = 48*' },
+      { query: 'buyer-country = FRA AND cpv = 72*' },
+      { query: 'buyer-country = FRA AND cpv = 30*' }
     ];
     let results = [];
     await Promise.all(queries.map(async q => {
