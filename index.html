@@ -120,7 +120,7 @@ input::placeholder { color: var(--text3); }
 <div class="hero">
   <h1>AOFinder</h1>
   <p>Appels d'offres informatique</p>
-  <div class="sources-badge"><div class="live"></div><span>API BOAMP + TED Europa</span></div>
+  <div class="sources-badge"><div class="live"></div><span>API BOAMP Officielle</span></div>
 </div>
 
 <div class="container">
@@ -144,7 +144,6 @@ input::placeholder { color: var(--text3); }
 
 <script>
 const API_BASE = 'https://boamp-datadila.opendatasoft.com/api/records/1.0/search/';
-const TED_BASE = '/api/ted';
 let allAO = [], displayed = 0, searchTimeout;
 const PER_PAGE = 50;
 let isLoading = false;
@@ -164,145 +163,82 @@ function estIT(titre, desc) {
 
 
 
-// ── TED via proxy Railway ──
-async function fetchTED() {
-  try {
-    // Recherche par mots-clés IT + pays France
-    // Syntaxe confirmée doc officielle TED v3
-    const keywords = [
-      'logiciel informatique',
-      'systeme information',
-      'infrastructure informatique',
-      'cybersecurite securite informatique',
-      'developpement application',
-      'maintenance informatique',
-      'cloud computing azure aws'
-    ];
-    let results = [];
-    await Promise.all(keywords.map(async kw => {
-      try {
-        const resp = await fetch(TED_BASE, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            query: kw,
-            fields: ['publication-number','notice-title','buyer-name','deadline-date','place-of-performance','buyer-country'],
-            limit: '50',
-            scope: 'ACTIVE',
-            checkQuerySyntax: false
-          })
-        });
-        const data = await resp.json();
-        if (data.notices) {
-          // Filtre France uniquement côté client
-          const frOnly = data.notices.filter(n => {
-            const country = (n['buyer-country'] || '');
-            const place = JSON.stringify(n['place-of-performance'] || '');
-            return country === 'FRA' || place.includes('FRA') || place.includes('France');
-          });
-          results = results.concat(frOnly);
-        }
-      } catch(e) {}
-    }));
-    // Déduplique
-    const seen = new Set();
-    return results.filter(n => {
-      const id = n['publication-number'];
-      if (!id || seen.has(id)) return false;
-      seen.add(id); return true;
-    }).map(n => {
-      const pubNum = n['publication-number'] || 'N/A';
-      const titleObj = n['notice-title'] || {};
-      const title = titleObj.fra || titleObj.eng || Object.values(titleObj)[0] || 'Sans titre';
-      const buyerArr = n['buyer-name'] || [];
-      const client = Array.isArray(buyerArr) ? (buyerArr[0] || 'Non specifie') : String(buyerArr || 'Non specifie');
-      return {
-        id: pubNum, title, client,
-        deadline: n['deadline-date'] || 'N/A',
-        location: 'France (EU)',
-        description: '',
-        url: 'https://ted.europa.eu/fr/notice/' + pubNum.replace('/', '-'),
-        source: 'TED'
-      };
-    }).filter(ao => estIT(ao.title, ''));
-  } catch(e) { console.error('TED:', e); return []; }
-}
-
 async function loadAO() {
   if (isLoading) return;
   isLoading = true;
   const container = document.getElementById('res');
   const queriesIT = [
-    'logiciel','software','progiciel','application informatique','solution logicielle','solution SaaS',
-    'ibmi','as400','iseries','rpg','cobol','db2 400',
-    'java','spring OR springboot','dotnet','php','symfony','laravel','python','django OR flask',
-    'site web','application web','portail web','developpement web',
-    'react OR reactjs','angular','vue.js OR vuejs','node.js OR nodejs','typescript',
-    'application mobile','iOS OR android','flutter OR react native','intranet','extranet',
-    'serveur informatique','infrastructure informatique',
-    'cloud computing','cloud public','cloud prive','cloud hybride',
-    'azure','aws OR amazon web services','google cloud OR GCP',
-    'datacenter','hebergement informatique','virtualisation','vmware OR vsphere','hyper-v',
-    'conteneur OR container','microservices',
-    'devops','CI/CD','jenkins','gitlab','github actions',
-    'docker','kubernetes OR k8s','terraform','ansible',
-    'cybersecurite','securite informatique','firewall','pare-feu','antivirus OR EDR',
-    'SIEM OR SOC','pentest OR test intrusion','conformite RGPD','ISO 27001',
-    'sauvegarde informatique','plan continuite informatique','zero trust',
-    'reseau informatique','switch OR routeur reseau','wifi OR WLAN',
-    'telephonie IP','VOIP OR IPBX','VPN','fibre optique',
-    'base de donnees','SGBD OR SQL','oracle database','mysql OR postgresql OR mariadb',
-    'Business Intelligence','BI OR reporting','data warehouse','data lake','big data',
-    'data engineer','data analyst','data science',
-    'machine learning OR IA','intelligence artificielle','ETL OR ELT','power BI OR tableau OR qlik',
-    'ERP','CRM','SIRH OR RH informatique','SAP','salesforce','odoo OR sage',
-    'GMAO OR CMMS','GED OR ECM','dematerialisation','signature electronique','archivage electronique',
-    'workflow OR BPM','messagerie electronique',
-    'systeme information','schema directeur informatique','architecture SI','transformation digitale',
-    'audit informatique','MOA informatique','MOE informatique',
-    'ordinateur OR PC portable','poste de travail','serveur rack OR lame','baie serveur',
-    'imprimante reseau','scanner reseau','tablette informatique','onduleur informatique',
-    'equipement reseau','NAS OR SAN stockage',
-    'maintenance informatique','support informatique','infogerance','tierce maintenance OR TMA',
-    'MCO OR maintien operationnel','helpdesk OR service desk',
-    'assistance technique informatique','regie informatique','audit SI','conseil informatique',
-    'Microsoft OR Office 365','Windows server','licence logiciel','adobe OR autodesk','linux OR open source',
-    'formation informatique','formation developpement','formation cybersecurite','formation cloud',
-    'certification AWS OR azure certification',
-    'RPA OR robotic process automation','UiPath OR blue prism','power automate',
-    'chatbot OR agent conversationnel','NLP OR traitement langage naturel',
-    'ITSM OR ITIL','supervision informatique','monitoring OR observabilite','Zabbix OR Nagios OR Grafana',
-    'API management OR gateway','ESB OR middleware','blockchain','IoT OR internet des objets',
-    'numerique','informatique',
-    'logiciel metier','migration informatique','refonte informatique','modernisation SI',
-    'integration informatique','open data','API REST OR API SOAP','SaaS OR PaaS OR IaaS',
-    'active directory OR LDAP OR SSO','authentification OR MFA','RGPD OR protection donnees',
-    'ticketing OR GLPI OR JIRA','CMDB OR inventaire IT','messagerie OR mail OR outlook',
-    'developpement agile OR scrum OR kanban','test logiciel OR recette OR qualification',
-    'formation OR e-learning OR LMS','geolocalisation OR SIG OR cartographie',
-    'portail citoyen OR teleprocedure','SI collectivite OR informatique commune',
-    'informatique hopital OR SI hospitalier','SI ecole OR ENT OR numerique educatif',
-    'cloud souverain OR SecNumCloud','OVHcloud OR Outscale OR Scaleway',
-    'HDS OR hebergeur donnees sante','UGAP OR centrale achat informatique',
-    'jumeau numerique OR digital twin','realite virtuelle OR VR OR AR','edge computing',
-    'portail agent OR intranet RH','portail usager OR espace personnel',
-    'GRC OR gestion relation citoyen','webservice OR SOAP OR REST',
-    'accessibilite numerique OR RGAA','AMO informatique OR assistance maitrise ouvrage',
-    'PGI OR progiciel gestion integre','paie OR logiciel paie',
-    'tracabilite OR QR code OR code barre','kiosque numerique OR borne interactive',
-    'affichage dynamique OR digital signage','IPAM OR gestion adresses IP',
-    'PKI OR certificat SSL OR TLS','DLP OR prevention fuite donnees',
-    'MDM OR gestion appareils mobiles','virtualisation postes OR VDI OR Citrix',
-    'bureau virtuel OR thin client','PRA OR PCA informatique',
-    'replication donnees OR synchronisation SI','SCADA OR supervision industrielle',
-    'SI justice OR tribunal informatique','SI prefecture OR informatique etat',
-    'SI universite OR informatique enseignement','systeme information eau OR SI eau',
-    'scala OR kotlin','golang OR rust','interoperabilite SI OR echange donnees',
-    'benchmark IT OR etude comparatif logiciel','visioconference OR Teams OR Zoom',
-    'stockage OR archivage OR sauvegarde cloud','wifi public OR hotspot OR portail captif',
-    'PKI OR HSM OR module securite materiel','asset management IT OR gestion parc',
-    'streaming applicatif OR application delivery'
-  ];
+      'logiciel','software','progiciel','application informatique','solution logicielle','solution SaaS',
+      'ibmi','as400','iseries','rpg','cobol','db2 400',
+      'java','spring OR springboot','dotnet','php','symfony','laravel','python','django OR flask',
+      'scala OR kotlin','golang OR rust','typescript',
+      'site web','application web','portail web','developpement web',
+      'react OR reactjs','angular','vue.js OR vuejs','node.js OR nodejs',
+      'application mobile','iOS OR android','flutter OR react native','intranet','extranet',
+      'serveur informatique','infrastructure informatique',
+      'cloud computing','cloud public','cloud prive','cloud hybride',
+      'azure','aws OR amazon web services','google cloud OR GCP',
+      'datacenter','hebergement informatique','virtualisation','vmware OR vsphere','hyper-v',
+      'conteneur OR container','microservices','serverless',
+      'devops','CI/CD','jenkins','gitlab','github actions',
+      'docker','kubernetes OR k8s','terraform','ansible',
+      'cybersecurite','securite informatique','firewall','pare-feu','antivirus OR EDR',
+      'SIEM OR SOC','pentest OR test intrusion','conformite RGPD','ISO 27001',
+      'sauvegarde informatique','plan continuite informatique','zero trust',
+      'reseau informatique','switch OR routeur reseau','wifi OR WLAN',
+      'telephonie IP','VOIP OR IPBX','VPN','fibre optique','SD-WAN OR MPLS',
+      'base de donnees','SGBD OR SQL','oracle database','mysql OR postgresql OR mariadb',
+      'Business Intelligence','BI OR reporting','data warehouse','data lake','big data',
+      'data engineer','data analyst','data science',
+      'machine learning OR IA','intelligence artificielle','ETL OR ELT','power BI OR tableau OR qlik',
+      'LLM OR RAG OR IA generative','chatbot OR agent conversationnel',
+      'ERP','CRM','SIRH OR RH informatique','SAP','salesforce','odoo OR sage',
+      'GMAO OR CMMS','GED OR ECM','dematerialisation','signature electronique','archivage electronique',
+      'workflow OR BPM','messagerie electronique','Microsoft OR Office 365',
+      'systeme information','schema directeur informatique','architecture SI','transformation digitale',
+      'audit informatique','MOA informatique','MOE informatique',
+      'ordinateur OR PC portable','poste de travail','serveur rack OR lame','baie serveur',
+      'imprimante reseau','scanner reseau','tablette informatique','onduleur informatique',
+      'equipement reseau','NAS OR SAN stockage','MDM OR gestion appareils mobiles',
+      'maintenance informatique','support informatique','infogerance','tierce maintenance OR TMA',
+      'MCO OR maintien operationnel','helpdesk OR service desk',
+      'assistance technique informatique','regie informatique','audit SI','conseil informatique',
+      'Windows server','licence logiciel','adobe OR autodesk','linux OR open source',
+      'formation informatique','formation developpement','formation cybersecurite','formation cloud',
+      'certification AWS OR azure certification','e-learning OR LMS',
+      'RPA OR robotic process automation','UiPath OR blue prism','power automate',
+      'NLP OR traitement langage naturel','OCR OR reconnaissance caracteres',
+      'ITSM OR ITIL','supervision informatique','monitoring OR observabilite','Zabbix OR Nagios OR Grafana',
+      'API management OR gateway','ESB OR middleware','blockchain','IoT OR internet des objets',
+      'numerique','informatique',
+      'logiciel metier','migration informatique','refonte informatique','modernisation SI',
+      'integration informatique','open data','API REST OR API SOAP','SaaS OR PaaS OR IaaS',
+      'active directory OR LDAP OR SSO','authentification OR MFA','RGPD OR protection donnees',
+      'ticketing OR GLPI OR JIRA','CMDB OR inventaire IT','messagerie OR mail OR outlook',
+      'developpement agile OR scrum OR kanban','test logiciel OR recette OR qualification',
+      'geolocalisation OR SIG OR cartographie',
+      'portail citoyen OR teleprocedure','SI collectivite OR informatique commune',
+      'informatique hopital OR SI hospitalier','SI ecole OR ENT OR numerique educatif',
+      'cloud souverain OR SecNumCloud','OVHcloud OR Outscale OR Scaleway',
+      'HDS OR hebergeur donnees sante','UGAP OR centrale achat informatique',
+      'jumeau numerique OR digital twin','edge computing','5G OR reseau prive',
+      'portail agent OR intranet RH','portail usager OR espace personnel',
+      'webservice OR SOAP OR REST','accessibilite numerique OR RGAA',
+      'AMO informatique OR assistance maitrise ouvrage',
+      'PGI OR progiciel gestion integre','paie OR logiciel paie',
+      'tracabilite OR QR code OR code barre','kiosque numerique OR borne interactive',
+      'affichage dynamique OR digital signage','IPAM OR gestion adresses IP',
+      'PKI OR certificat SSL OR TLS','DLP OR prevention fuite donnees',
+      'virtualisation postes OR VDI OR Citrix','bureau virtuel OR thin client',
+      'PRA OR PCA informatique','replication donnees OR synchronisation SI',
+      'SCADA OR supervision industrielle','SI justice OR tribunal informatique',
+      'SI prefecture OR informatique etat','SI universite OR informatique enseignement',
+      'stockage OR archivage OR sauvegarde cloud','wifi public OR hotspot OR portail captif',
+      'asset management IT OR gestion parc','streaming applicatif OR application delivery',
+      'visioconference OR Teams OR Zoom professionnel','SharePoint OR confluence OR wiki',
+      'devSecOps OR securite applicative','pentest OR audit vulnerabilite',
+      'interoperabilite SI OR echange donnees','benchmark IT OR etude comparatif logiciel'
+    ];
   container.innerHTML = '<div class="loading"><div class="spinner"></div><h3>Chargement en cours...</h3><p id="prog-lbl" style="margin-top:8px;color:var(--text3);font-size:14px;">Connexion à BOAMP...</p><div style="width:320px;max-width:80vw;height:5px;background:var(--border2);border-radius:5px;margin:16px auto 0;overflow:hidden"><div id="prog-bar" style="height:100%;width:0%;background:linear-gradient(90deg,var(--accent),var(--success));border-radius:5px;transition:width 0.3s ease"></div></div></div>';
   try {
     let allResults = [];
@@ -372,17 +308,8 @@ async function loadAO() {
 
     // Tri par deadline (les plus urgents en premier, N/A à la fin)
     
-    // Merge TED
-    try {
-      const tedAO = await fetchTED();
-      if (tedAO.length > 0) {
-        const ids = new Set(allAO.map(a => a.id));
-        allAO = tedAO.filter(a => !ids.has(a.id)).concat(allAO);
-        console.log('TED: ' + tedAO.length + ' AO ajoutes');
-      }
-    } catch(e) {}
     displayed = 0; displayAO(); updateStats(allAO.length);
-    toast('✓ ' + allAO.length + ' AO (BOAMP + TED)');
+    toast('✓ ' + allAO.length + ' AO informatique');
   } catch(e) {
     console.error(e);
     container.innerHTML = '<div class="loading"><h3>⚠️ Erreur BOAMP</h3></div>';
