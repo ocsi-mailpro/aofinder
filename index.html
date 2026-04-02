@@ -80,19 +80,7 @@ body {
   75%{transform:translate(-2%,-4%)}
 }
 /* Vagues SVG */
-.waves-wrap {
-  position: fixed; bottom: 0; left: 0; width: 100%; z-index: 0; pointer-events: none; overflow: hidden;
-  opacity: 0.18;
-}
-[data-theme="light"] .waves-wrap { opacity: 0.12; }
-.waves-svg { width: 100%; height: 160px; display: block; }
-.wave1 { animation: waveMove 18s linear infinite; }
-.wave2 { animation: waveMove 24s linear infinite reverse; opacity: 0.6; }
-.wave3 { animation: waveMove 32s linear infinite; opacity: 0.4; }
-@keyframes waveMove {
-  0%{transform:translateX(0)}
-  100%{transform:translateX(-50%)}
-}
+
 
 /* ── THEME TOGGLE ── */
 .theme-toggle {
@@ -339,22 +327,8 @@ input::placeholder { color: var(--text3); }
 <body>
 
 <div class="bg-gradient"></div>
-<div class="waves-wrap" aria-hidden="true">
-  <svg class="waves-svg" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1440 160" preserveAspectRatio="none">
-    <g class="wave1">
-      <path d="M0,80 C180,120 360,40 540,80 C720,120 900,40 1080,80 C1260,120 1440,40 1620,80 C1800,120 1980,40 2160,80 C2340,120 2520,40 2700,80 C2880,120 3060,40 3240,80 L3240,160 L0,160 Z" fill="url(#wg1)"/>
-      <defs><linearGradient id="wg1" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#2b8aff" stop-opacity="0.5"/><stop offset="100%" stop-color="#2b8aff" stop-opacity="0"/></linearGradient></defs>
-    </g>
-    <g class="wave2">
-      <path d="M0,100 C240,60 480,140 720,100 C960,60 1200,140 1440,100 C1680,60 1920,140 2160,100 C2400,60 2640,140 2880,100 L2880,160 L0,160 Z" fill="url(#wg2)"/>
-      <defs><linearGradient id="wg2" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#34d368" stop-opacity="0.4"/><stop offset="100%" stop-color="#34d368" stop-opacity="0"/></linearGradient></defs>
-    </g>
-    <g class="wave3">
-      <path d="M0,120 C200,90 400,150 600,120 C800,90 1000,150 1200,120 C1400,90 1600,150 1800,120 C2000,90 2200,150 2400,120 L2400,160 L0,160 Z" fill="url(#wg3)"/>
-      <defs><linearGradient id="wg3" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#6e32dc" stop-opacity="0.3"/><stop offset="100%" stop-color="#6e32dc" stop-opacity="0"/></linearGradient></defs>
-    </g>
-  </svg>
-</div>
+
+
 
 <button class="theme-toggle" onclick="toggleTheme()" id="themeBtn">
   <span class="icon" id="themeIcon">☀️</span>
@@ -412,7 +386,7 @@ async function loadAO() {
   isLoading = true;
   const container = document.getElementById('res');
   const CACHE_KEY = 'aofinder_cache';
-  const CACHE_TTL = 60 * 60 * 1000; // 1 heure
+  const CACHE_TTL = 60 * 60 * 1000; // 1 heure exactement // 1 heure
 
   // ── Vérifie le cache ──
   try {
@@ -566,10 +540,12 @@ async function loadAO() {
       };
     }).filter(ao => {
       if (!estIT(ao.title, ao.description)) return false;
-      // Exclut les AO dont la deadline est dépassée
+      // Exclut seulement les AO dont la deadline est clairement dépassée (> 30 jours)
       if (ao.deadline && ao.deadline !== 'N/A') {
         const d = new Date(ao.deadline);
-        if (!isNaN(d) && d < new Date()) return false;
+        const limit = new Date();
+        limit.setDate(limit.getDate() - 30);
+        if (!isNaN(d.getTime()) && d < limit) return false;
       }
       return true;
     });
